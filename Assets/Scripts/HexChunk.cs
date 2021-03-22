@@ -196,6 +196,29 @@ public class HexChunk : MonoBehaviour
         }
         return false;
     }
+    public bool ExistsInList(Vector3[] array, List<Vector3> list)
+    {
+        int aLength = array.Length;
+        int lLength = list.Count;
+        for (int lIdx = 0; lIdx < lLength - aLength; ++lIdx)
+        {
+            bool allMatch = true;
+            List<Vector3> checkList = list.GetRange(lIdx, aLength);
+            for (int aIdx = 0; aIdx < aLength; ++aIdx)
+            {
+                if (checkList[aIdx] != array[aIdx])
+                {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     public void AddHexMesh(Mesh mesh, int width, int height)
     {
         CreateGrid(width, height);
@@ -297,7 +320,10 @@ public class HexChunk : MonoBehaviour
         vertices[1] = from.GetCorner(dir.Next());
         vertices[2] = to.ClosestCorner(vertices[0]);
         vertices[3] = to.ClosestCorner(vertices[1]);
-        lVertices.AddRange(vertices);
+        if(!ExistsInList(vertices, lVertices))
+        {
+            lVertices.AddRange(vertices);
+        }
         int[] triangles = {
                 lVertices.IndexOf(vertices[0]),
                 lVertices.IndexOf(vertices[2]),

@@ -53,10 +53,12 @@ public class HexChunkGroup : MonoBehaviour
             //Debug.Log("Adding righthand neighbor of: " + (x - 1) + ", " + z + ". ChunkMap size is: "+ chunkMap.GetLength(0) + ", " + chunkMap.GetLength(1));
             newChunk.AddNeighborChunk(false, chunkMap[x - 1, z]);
         }
-        newDisplay.CreateMap(); //don't do this until after the edges are stitched
+         //don't do this until after the edges are stitched
+
         Vector3 tVector = new Vector3(x * HexMetrics.chunkWidth, 0f, z * HexMetrics.chunkHeight);
         tVector += newChunkObject.transform.position;
         newChunkObject.transform.position = tVector;
+        newDisplay.CreateMap();
     }
     public void Generate()
     {
