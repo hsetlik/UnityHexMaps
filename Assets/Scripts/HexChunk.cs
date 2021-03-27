@@ -678,7 +678,33 @@ public class HexChunk : MonoBehaviour
     }
     public void FillCorner(HexChunk left, HexChunk below, HexChunk corner)
     {
-
+        //add quad
+        AddBridgeOutside(HexDirection.SW, hexMeshes[0, 0], corner.hexMeshes[HexMetrics.chunkSize - 1, HexMetrics.chunkSize - 1], translationVector, corner.translationVector);
+        int limit = HexMetrics.chunkSize - 1;
+        //add lower triangle
+        Vector3[] lVerts = new Vector3[3];
+        int vStart = lVertices.Count;
+        lVerts[0] = hexMeshes[0, 0].GetCorner(HexDirection.SW) + translationVector;
+        lVerts[1] = below.hexMeshes[0, limit].GetCorner(HexDirection.NW) + below.translationVector;
+        lVerts[2] = corner.hexMeshes[limit, limit].GetCorner(HexDirection.E) + corner.translationVector;
+        lVertices.AddRange(lVerts);
+        int[] lTris = { vStart, vStart + 1, vStart + 2 };
+        if (!ExistsInList(lTris, lTriangles))
+        {
+            lTriangles.AddRange(lTris);
+        }
+        //add upper triangle
+        vStart = lVertices.Count;
+        Vector3[] uVerts = new Vector3[3];
+        uVerts[0] = hexMeshes[0, 0].GetCorner(HexDirection.W) + translationVector;
+        uVerts[1] = corner.hexMeshes[limit, limit].GetCorner(HexDirection.NE) + corner.translationVector;
+        uVerts[2] = left.hexMeshes[limit, 0].GetCorner(HexDirection.SE) + left.translationVector;
+        lVertices.AddRange(uVerts);
+        int[] uTris = { vStart, vStart + 1, vStart + 2 };
+        if (!ExistsInList(uTris, lTriangles))
+        {
+            lTriangles.AddRange(uTris);
+        }
     }
     public void SetElevation(float[,] heightMap) //remember to call this before connecting bridges and triangles
     {
