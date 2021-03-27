@@ -163,9 +163,9 @@ public class HexChunk : MonoBehaviour
         set
         {
             zOff = value;
-            for(int x = 0; x< HexMetrics.chunkSize; ++x)
+            for (int x = 0; x < HexMetrics.chunkSize; ++x)
             {
-                for(int z = 0; z < HexMetrics.chunkSize; ++z)
+                for (int z = 0; z < HexMetrics.chunkSize; ++z)
                 {
                     hexMeshes[x, z].CoordZ = value;
                 }
@@ -193,8 +193,8 @@ public class HexChunk : MonoBehaviour
                 lVertices.AddRange(hexMeshes[x, z].GetVertices());
                 lTriangles.AddRange(hexMeshes[x, z].GetTriangles());
                 ++hexIndex;
-                Debug.Log("Vertices for hex " + x + ", " + z + ": " + lVertices.Count);
-                Debug.Log("Triangles for hex " + x + ", " + z + ": " + lTriangles.Count);
+                //Debug.Log("Vertices for hex " + x + ", " + z + ": " + lVertices.Count);
+                //Debug.Log("Triangles for hex " + x + ", " + z + ": " + lTriangles.Count);
                 HexMesh currentHex = hexMeshes[x, z];
                 for (HexDirection dir = HexDirection.SE; dir <= HexDirection.NW; ++dir)
                 {
@@ -204,8 +204,8 @@ public class HexChunk : MonoBehaviour
                         AddTriangle(dir, currentHex);
                     }
                 }
-                Debug.Log("Vertices after bridges and tris: " + lVertices.Count);
-                Debug.Log("Triangles after bridges and tris: " + lTriangles.Count);
+                //Debug.Log("Vertices after bridges and tris: " + lVertices.Count);
+                //Debug.Log("Triangles after bridges and tris: " + lTriangles.Count);
             }
         }
     }
@@ -213,19 +213,19 @@ public class HexChunk : MonoBehaviour
     {
         int aLength = array.Length;
         int lLength = list.Count;
-        for(int lIdx = 0; lIdx < lLength - aLength; ++lIdx)
+        for (int lIdx = 0; lIdx < lLength - aLength; ++lIdx)
         {
             bool allMatch = true;
             List<int> checkList = list.GetRange(lIdx, aLength);
             for (int aIdx = 0; aIdx < aLength; ++aIdx)
             {
-                if(checkList[aIdx] != array[aIdx])
+                if (checkList[aIdx] != array[aIdx])
                 {
                     allMatch = false;
                     break;
                 }
             }
-            if(allMatch)
+            if (allMatch)
             {
                 return true;
             }
@@ -282,7 +282,7 @@ public class HexChunk : MonoBehaviour
         int dX = 0;
         int dZ = 0;
         bool evenRow = ((cZ & 1) != 1);
-        switch(direction)
+        switch (direction)
         {
             case HexDirection.NE:
                 {
@@ -322,12 +322,12 @@ public class HexChunk : MonoBehaviour
                 }
         }
         int x = cX + dX;
-        if(x >= hexMeshes.GetLength(0) || x < 0)
+        if (x >= hexMeshes.GetLength(0) || x < 0)
         {
             return null;
         }
         int z = cZ + dZ;
-        if(z >= hexMeshes.GetLength(1) || z < 0)
+        if (z >= hexMeshes.GetLength(1) || z < 0)
         {
             return null;
         }
@@ -336,19 +336,19 @@ public class HexChunk : MonoBehaviour
 
     public void AddBridgeOutside(HexDirection dir, HexMesh from, HexMesh to, Vector3 fromT, Vector3 toT)
     {
-        if(translationVector == null)
+        if (translationVector == null)
         {
             return;
         }
         int vStart = lVertices.Count;
         Vector3[] vertices = new Vector3[4];
-    
-            vertices[0] = from.GetCorner(dir) + fromT;
-            vertices[1] = from.GetCorner(dir.Next()) + fromT;
-            vertices[2] = to.GetCorner(dir.Opposite()) + toT;
-            vertices[3] = to.GetCorner(dir.Next().Opposite()) + toT;
-        
-        if(!ExistsInList(vertices, lVertices))
+
+        vertices[0] = from.GetCorner(dir) + fromT;
+        vertices[1] = from.GetCorner(dir.Next()) + fromT;
+        vertices[2] = to.GetCorner(dir.Opposite()) + toT;
+        vertices[3] = to.GetCorner(dir.Next().Opposite()) + toT;
+
+        if (!ExistsInList(vertices, lVertices))
         {
             lVertices.AddRange(vertices);
         }
@@ -360,17 +360,45 @@ public class HexChunk : MonoBehaviour
                 vStart,
                 vStart + 3
         };
-        
+
         if (!ExistsInList(triangles, lTriangles))
         {
 
             lTriangles.AddRange(triangles);
         }
+        int[] edgeTri = new int[3];
+        switch (dir)
+        {
+            case HexDirection.NE:
+                {
+                    break;
+                }
+            case HexDirection.E:
+                {
+                    break;
+                }
+            case HexDirection.SE:
+                {
+                    break;
+                }
+            case HexDirection.SW:
+                {
+                    break;
+                }
+            case HexDirection.W:
+                {
+                    break;
+                }
+            case HexDirection.NW:
+                {
+                    break;
+                }
+        }
     }
     public void AddBridge(HexDirection direction, HexMesh hex)
     {
         HexMesh neighbor = GetNeighbor(direction, hex);
-        if(neighbor == null)
+        if (neighbor == null)
         {
             return;
         }
@@ -388,13 +416,9 @@ public class HexChunk : MonoBehaviour
                 lVertices.IndexOf(vertices[0]),
                 lVertices.IndexOf(vertices[3])
         };
-        if(!ExistsInList(triangles, lTriangles)) //double check to not add duplicate triangles
+        if (!ExistsInList(triangles, lTriangles)) //double check to not add duplicate triangles
         {
             lTriangles.AddRange(triangles);
-        }
-        else
-        {
-            Debug.Log("!!Trying to add duplicate triangles!!");
         }
     }
 
@@ -402,13 +426,13 @@ public class HexChunk : MonoBehaviour
     {
         Vector3[] vertices = new Vector3[3];
         int[] triangles = new int[3];
-        switch(direction)
+        switch (direction)
         {
             case HexDirection.SW:
                 {
                     HexMesh n1 = GetNeighbor(HexDirection.SE, hex);
                     HexMesh n2 = GetNeighbor(HexDirection.SW, hex);
-                    if(n1 == null || n2 == null)
+                    if (n1 == null || n2 == null)
                     {
                         return;
                     }
@@ -470,15 +494,15 @@ public class HexChunk : MonoBehaviour
         ChunkDataset dataset = new ChunkDataset();
         dataset.xPos = xP;
         dataset.xPos = zP;
-        for(int x = 0; x < MapMetrics.chunkSize; ++x)
+        for (int x = 0; x < MapMetrics.chunkSize; ++x)
         {
-            for(int z = 0; z < MapMetrics.chunkSize; ++z)
+            for (int z = 0; z < MapMetrics.chunkSize; ++z)
             {
                 HexMesh currentMesh = hexMeshes[x + xP, z + zP];
                 dataset.verts.AddRange(currentMesh.GetVertices());
                 int minTri = int.MaxValue;
                 int[] newTris = currentMesh.GetTriangles();
-                for(int i = 0; i < newTris.Length; ++i)
+                for (int i = 0; i < newTris.Length; ++i)
                 {
                     if (newTris[i] < minTri)
                         minTri = newTris[i];
@@ -494,6 +518,66 @@ public class HexChunk : MonoBehaviour
 
         return dataset;
     }
+    public void AddTriangleOutside(HexDirection dir, HexMesh from, HexMesh n1, HexMesh n2, Vector3 tFrom, Vector3 tTo)
+    {
+        int[] tris = new int[3];
+        Vector3[] verts = new Vector3[3];
+        int vStart = lVertices.Count;
+        switch(dir)
+        {
+            case HexDirection.NE:
+                {
+
+                    break;
+                }
+            case HexDirection.E:
+                {
+                    break;
+                }
+            case HexDirection.SE:
+                {
+                    verts[0] = from.GetCorner(HexDirection.SE) + tFrom;
+                    verts[1] = n1.GetCorner(HexDirection.W) + tFrom;
+                    verts[2] = n2.GetCorner(HexDirection.NE) + tTo;
+                    if (!ExistsInList(verts, lVertices))
+                    {
+                        lVertices.AddRange(verts);
+                    }
+                    tris[0] = vStart;
+                    tris[1] = vStart + 1;
+                    tris[2] = vStart + 2;
+                    Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
+                    break;
+                }
+            case HexDirection.SW:
+                {
+                    verts[0] = from.GetCorner(HexDirection.SW) + tFrom;
+                    verts[1] = n1.GetCorner(HexDirection.NW) + tTo;
+                    verts[2] = n2.GetCorner(HexDirection.E) + tTo;
+                    if (!ExistsInList(verts, lVertices))
+                    {
+                        lVertices.AddRange(verts);
+                    }
+                    tris[0] = vStart;
+                    tris[1] = vStart + 1;
+                    tris[2] = vStart + 2;
+                    Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
+                    break;
+                }
+            case HexDirection.W:
+                {
+                    break;
+                }
+            case HexDirection.NW:
+                {
+                    break;
+                }
+        }
+        if(!ExistsInList(tris, lTriangles))
+        {
+            lTriangles.AddRange(tris);
+        }
+    }
     public void AddNeighborChunk(bool isAbove, HexChunk neighbor)
     {
         if(this == neighbor)
@@ -503,17 +587,36 @@ public class HexChunk : MonoBehaviour
         }
         if(isAbove)
         {
-            for(int i = 0; i < HexMetrics.chunkSize; ++i)
+            
+            for (int i = 0; i < HexMetrics.chunkSize; ++i)
             {
                 HexMesh from = hexMeshes[i, 0];
                 HexMesh to = neighbor.hexMeshes[i, 5];
-                Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
-                Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
+                HexMesh n1;
+                HexMesh n2;
+                //Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
+                //Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
                 AddBridgeOutside(HexDirection.SE, from, to, translationVector, neighbor.translationVector);
                 if(i > 0)
                 {
                     HexMesh toSW = neighbor.hexMeshes[ i - 1, 5];
                     AddBridgeOutside(HexDirection.SW, from, toSW, translationVector, neighbor.translationVector);
+                    n1 = to;
+                    n2 = neighbor.hexMeshes[i - 1, 5];
+                    if(n1 != null && n2 != null)
+                    {
+                        AddTriangleOutside(HexDirection.SW, from, n1, n2, translationVector, neighbor.translationVector);
+                    }
+                }
+                if(i < HexMetrics.chunkSize - 1)
+                {
+                    n1 = hexMeshes[i + 1, 0];
+                    n2 = to;
+                    if(n1 != null && n2 != null)
+                    {
+                        AddTriangleOutside(HexDirection.SE, from, n1, n2, translationVector, neighbor.translationVector);
+                    }
+
                 }
             }
         }
@@ -523,8 +626,8 @@ public class HexChunk : MonoBehaviour
             {
                 HexMesh from = hexMeshes[0, i];
                 HexMesh to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i];
-                Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
-                Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
+                //Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
+                //Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
                 AddBridgeOutside(HexDirection.W, from, to, translationVector, neighbor.translationVector);
                 if(i % 2 == 0)
                 {
