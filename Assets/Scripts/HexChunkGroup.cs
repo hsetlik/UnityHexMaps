@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(NoiseGenerator))]
 public class HexChunkGroup : MonoBehaviour
 {
     public int xChunks;
@@ -23,12 +24,9 @@ public class HexChunkGroup : MonoBehaviour
     private List<HexChunkDisplay> chunkDisplays;
     private List<HexChunk> chunks;
     private HexChunk[,] chunkMap;
-    private float maxElev;
-    private float minElev;
+    private NoiseGenerator noiseGen;
     public HexChunkGroup()
     {
-        maxElev = float.MinValue;
-        minElev = float.MaxValue;
         chunkDisplays = new List<HexChunkDisplay>();
         chunks = new List<HexChunk>();
         //landGradient = new Gradient();
@@ -56,7 +54,8 @@ public class HexChunkGroup : MonoBehaviour
         tVector += newChunkObject.transform.position;
         newChunk.CreateGrid(HexMetrics.chunkSize,
         HexMetrics.chunkSize,
-        NoiseGenerator.CreateNoiseMap(HexMetrics.chunkSize, x, HexMetrics.chunkSize, z, noiseSeed, noiseOctaves, noiseScale, noiseHeight, noiseOffset, noisePersistence, lacunarity));
+        noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z),
+        noiseHeight);
         newChunk.Translate(tVector);
         if (x > 0)
         {
@@ -79,6 +78,15 @@ public class HexChunkGroup : MonoBehaviour
     }
     public void Generate()
     {
+        noiseGen = GetComponent<NoiseGenerator>();
+        noiseGen.CreateNoiseMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize,
+            noiseSeed,
+            noiseOctaves,
+            noiseScale,
+            noiseOffset,
+            noisePersistence,
+            lacunarity,
+            waterLevel);
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
         for (int i = 0; i < allChunks.Length; ++i)
         {

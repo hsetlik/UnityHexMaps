@@ -202,7 +202,7 @@ public class HexChunk : MonoBehaviour
         return height;
     }
 
-    public void CreateGrid(int width, int height, float[,] noiseMap)
+    public void CreateGrid(int width, int height, float[,] noiseMap, float noiseScale)
     {
         mWidth = width;
         mHeight = height;
@@ -218,12 +218,10 @@ public class HexChunk : MonoBehaviour
             for (int z = 0; z < height; ++z)
             {
                 hexMeshes[x, z] = new HexMesh(x, z, hexIndex * 7 + vOffset);
-                hexMeshes[x, z].SetElevation(noiseMap[x, z]);
+                hexMeshes[x, z].SetElevation(noiseMap[x, z] * noiseScale);
                 lVertices.AddRange(hexMeshes[x, z].GetVertices());
                 lTriangles.AddRange(hexMeshes[x, z].GetTriangles());
                 ++hexIndex;
-                //Debug.Log("Vertices for hex " + x + ", " + z + ": " + lVertices.Count);
-                //Debug.Log("Triangles for hex " + x + ", " + z + ": " + lTriangles.Count);
                 HexMesh currentHex = hexMeshes[x, z];
                 for (HexDirection dir = HexDirection.SE; dir <= HexDirection.NW; ++dir)
                 {
@@ -233,8 +231,6 @@ public class HexChunk : MonoBehaviour
                         AddTriangle(dir, currentHex);
                     }
                 }
-                //Debug.Log("Vertices after bridges and tris: " + lVertices.Count);
-                //Debug.Log("Triangles after bridges and tris: " + lTriangles.Count);
             }
         }
     }
@@ -308,8 +304,11 @@ public class HexChunk : MonoBehaviour
     }
     public void ApplyToMesh(Mesh mesh)
     {
+        
         mesh.vertices = lVertices.ToArray();
         mesh.triangles = lTriangles.ToArray();
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
         mesh.colors = lColors.ToArray();
     }
     HexMesh GetNeighbor(HexDirection direction, HexMesh center)
@@ -584,7 +583,7 @@ public class HexChunk : MonoBehaviour
                         verts[1] = n1.GetCorner(HexDirection.W) + tFrom;
                         verts[2] = n2.GetCorner(HexDirection.NE) + tTo;
 
-                        Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
+                        //Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
                         break;
                     }
                 case HexDirection.SW:
@@ -593,7 +592,7 @@ public class HexChunk : MonoBehaviour
                         verts[1] = n1.GetCorner(HexDirection.NW) + tTo;
                         verts[2] = n2.GetCorner(HexDirection.E) + tTo;
 
-                        Debug.Log("Southwest triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
+                        //Debug.Log("Southwest triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
                         break;
                     }
                 case HexDirection.W:
