@@ -6,28 +6,37 @@ public class HexChunkGroup : MonoBehaviour
 {
     public int xChunks;
     public int zChunks;
+    public Gradient landGradient;
+    public float waterLevel;
     public float noiseScale;
     public float noiseHeight;
     public int noiseSeed;
+    public int noiseOctaves;
+    public Vector2 noiseOffset;
+    public float noisePersistence = 0.4f;
+    public float lacunarity = 1.3f;
     public bool autoUpdate;
-    int xCreated;
-    int zCreated;
+    
     private int numChunks;
     
     public GameObject chunk;
     private List<HexChunkDisplay> chunkDisplays;
     private List<HexChunk> chunks;
     private HexChunk[,] chunkMap;
+    private float maxElev;
+    private float minElev;
     public HexChunkGroup()
     {
-        xCreated = 0;
-        zCreated = 0;
+        maxElev = float.MinValue;
+        minElev = float.MaxValue;
         chunkDisplays = new List<HexChunkDisplay>();
         chunks = new List<HexChunk>();
+        //landGradient = new Gradient();
         numChunks = 0;
     }
     private void CreateChunk(int x, int z)
     {
+        
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
         numChunks = allChunks.Length;
         if((x * zChunks) + z < numChunks) //don't make a chunk if it already exists
@@ -47,7 +56,7 @@ public class HexChunkGroup : MonoBehaviour
         tVector += newChunkObject.transform.position;
         newChunk.CreateGrid(HexMetrics.chunkSize,
         HexMetrics.chunkSize,
-        NoiseGenerator.CreateNoiseMap(HexMetrics.chunkSize, x, HexMetrics.chunkSize, z, noiseSeed, noiseScale, noiseHeight));
+        NoiseGenerator.CreateNoiseMap(HexMetrics.chunkSize, x, HexMetrics.chunkSize, z, noiseSeed, noiseOctaves, noiseScale, noiseHeight, noiseOffset, noisePersistence, lacunarity));
         newChunk.Translate(tVector);
         if (x > 0)
         {
@@ -64,6 +73,7 @@ public class HexChunkGroup : MonoBehaviour
             HexChunk corner = chunkMap[x - 1, z - 1];
             newChunk.FillCorner(left, below, corner);
         }
+        newChunk.SetColors(landGradient, newChunk.GetMaxHeight(), newChunk.GetMinHeight());
         //don't do this until after the edges are stitched
         newDisplay.CreateMap();
     }
@@ -83,9 +93,7 @@ public class HexChunkGroup : MonoBehaviour
             {
                 //Debug.Log("Creating chunk: " + x + ", " + z);
                 CreateChunk(x, z);
-                zCreated++;
             }
-            xCreated++;
         }
     }
 

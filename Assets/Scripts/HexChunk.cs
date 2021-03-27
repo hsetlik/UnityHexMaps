@@ -136,10 +136,14 @@ public class HexMesh
 public class HexChunk : MonoBehaviour
 {
     public HexMesh[,] hexMeshes;
+    public List<Vector3> lVertices;
+    public List<int> lTriangles;
+    public List<Vector2> lUvs;
+    public List<Color> lColors;
     int mWidth;
     int mHeight;
     private Vector3 translationVector;
-    public int widthInChunks; //TODO: make sure these get set up correctly
+    public int widthInChunks;
     public int heightInChunks;
     private int xOff;
     public int OffsetX
@@ -173,15 +177,39 @@ public class HexChunk : MonoBehaviour
 
         }
     }
+    public float GetMinHeight()
+    {
+        float height = float.MaxValue;
+        for(int i = 0; i < lVertices.Count; ++i)
+        {
+            if(lVertices[i].y < height)
+            {
+                height = lVertices[i].y;
+            }    
+        }
+        return height;
+    }
+    public float GetMaxHeight()
+    {
+        float height = float.MinValue;
+        for (int i = 0; i < lVertices.Count; ++i)
+        {
+            if (lVertices[i].y > height)
+            {
+                height = lVertices[i].y;
+            }
+        }
+        return height;
+    }
 
-    public List<Vector3> lVertices;
-    public List<int> lTriangles;
     public void CreateGrid(int width, int height, float[,] noiseMap)
     {
         mWidth = width;
         mHeight = height;
         lVertices = new List<Vector3>();
         lTriangles = new List<int>();
+        lUvs = new List<Vector2>();
+        lColors = new List<Color>();
         hexMeshes = new HexMesh[width, height];
         int hexIndex = 0;
         int vOffset = 0;
@@ -208,6 +236,15 @@ public class HexChunk : MonoBehaviour
                 //Debug.Log("Vertices after bridges and tris: " + lVertices.Count);
                 //Debug.Log("Triangles after bridges and tris: " + lTriangles.Count);
             }
+        }
+    }
+    public void SetColors(Gradient gradient, float max, float min)
+    {
+        for(int i = 0; i < lVertices.Count; ++i)
+        {
+            float value = Mathf.InverseLerp(min, max, lVertices[i].y);
+            Color color = gradient.Evaluate(value);
+            lColors.Add(color);
         }
     }
     public bool ExistsInList(int[] array, List<int> list)
@@ -273,6 +310,7 @@ public class HexChunk : MonoBehaviour
     {
         mesh.vertices = lVertices.ToArray();
         mesh.triangles = lTriangles.ToArray();
+        mesh.colors = lColors.ToArray();
     }
     HexMesh GetNeighbor(HexDirection direction, HexMesh center)
     {
@@ -390,6 +428,39 @@ public class HexChunk : MonoBehaviour
         if (!ExistsInList(triangles, lTriangles)) //double check to not add duplicate triangles
         {
             lTriangles.AddRange(triangles);
+        }
+    }
+
+    public void CalculateUVs()
+    {
+        float zMax = float.MinValue;
+        float zMin = float.MaxValue;
+        float xMin = float.MaxValue;
+        float xMax = float.MinValue;
+        int numPoints = lVertices.Count;
+        for(int i = 0; i < numPoints; ++i)
+        {
+            if (lVertices[i].x > xMax)
+                xMax = lVertices[i].x;
+            if (lVertices[i].x < xMin)
+                xMin = lVertices[i].x;
+            if (lVertices[i].z > zMax)
+                zMax = lVertices[i].z;
+            if (lVertices[i].z < zMin)
+                zMin = lVertices[i].z;
+            Vector2 point = new Vector2();
+            point.x = lVertices[i].x;
+            point.y = lVertices[i].z;
+            lUvs.Add(point);
+        }
+        float xRange = xMax - xMin;
+        float zRange = zMax - zMin;
+        Vector2 uvScale = new Vector2();
+        uvScale.x = xRange;
+        uvScale.y = zRange;
+        for(int i = 0; i < numPoints; ++i)
+        {
+            lUvs[i].Scale(uvScale);
         }
     }
 
