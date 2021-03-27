@@ -51,15 +51,29 @@ public class HexMesh
             n.neighbors[(int)dir.Opposite()] = this;
         }
     }
-    public Vector3 ClosestCorner(Vector3 point)
+    public void Translate(Vector3 delta)
+    {
+        for(int i = 0; i < 7; ++i)
+        {
+            vertices[i] += delta;
+            if(i > 0)
+            {
+                corners[i] += delta;
+            }
+        }
+    }
+    public Vector3 ClosestCorner(Vector3 point) //note: this funtcion works in terms of distance on the X-Z plane
     {
         Vector3 closest = new Vector3();
         float minDistance = float.MaxValue;
         for(int i = 0; i < 6; ++i)
         {
-            float distance = Vector3.Distance(point, corners[i]);
+            float dX = Mathf.Abs(corners[i].x - point.x);
+            float dZ = Mathf.Abs(corners[i].z - point.z);
+            float distance = Mathf.Sqrt(Mathf.Pow(dX, 2) + Mathf.Pow(dZ, 2));
             if(distance < minDistance)
             {
+                minDistance = distance;
                 closest = corners[i];
             }
         }
@@ -121,18 +135,24 @@ public class HexMesh
 
 public class HexChunk : MonoBehaviour
 {
-    public HexMesh[] hexMeshes;
+    public HexMesh[,] hexMeshes;
     int mWidth;
     int mHeight;
+    private Vector3 translationVector;
+    public int widthInChunks; //TODO: make sure these get set up correctly
+    public int heightInChunks;
     private int xOff;
     public int OffsetX
     {
         get { return xOff; }
         set {
             xOff = value;
-            for(int i = 0; i < hexMeshes.Length; ++i)
+            for (int x = 0; x < HexMetrics.chunkSize; ++x)
             {
-                hexMeshes[i].CoordX = value;
+                for (int z = 0; z < HexMetrics.chunkSize; ++z)
+                {
+                    hexMeshes[x, z].CoordX = value;
+                }
             }
         }
     }
@@ -143,10 +163,14 @@ public class HexChunk : MonoBehaviour
         set
         {
             zOff = value;
-            for (int i = 0; i < hexMeshes.Length; ++i)
+            for(int x = 0; x< HexMetrics.chunkSize; ++x)
             {
-                hexMeshes[i].CoordZ = value;
+                for(int z = 0; z < HexMetrics.chunkSize; ++z)
+                {
+                    hexMeshes[x, z].CoordZ = value;
+                }
             }
+
         }
     }
 
@@ -158,20 +182,32 @@ public class HexChunk : MonoBehaviour
         mHeight = height;
         lVertices = new List<Vector3>();
         lTriangles = new List<int>();
-        hexMeshes = new HexMesh[width * height];
+        hexMeshes = new HexMesh[width, height];
         int hexIndex = 0;
         int vOffset = 0;
         for (int x = 0; x < width; ++x)
         {
             for (int z = 0; z < height; ++z)
             {
-                hexMeshes[hexIndex] = new HexMesh(x, z, hexIndex * 7 + vOffset);
-                lVertices.AddRange(hexMeshes[hexIndex].GetVertices());
-                lTriangles.AddRange(hexMeshes[hexIndex].GetTriangles());
+                hexMeshes[x, z] = new HexMesh(x, z, hexIndex * 7 + vOffset);
+                lVertices.AddRange(hexMeshes[x, z].GetVertices());
+                lTriangles.AddRange(hexMeshes[x, z].GetTriangles());
                 ++hexIndex;
+                Debug.Log("Vertices for hex " + x + ", " + z + ": " + lVertices.Count);
+                Debug.Log("Triangles for hex " + x + ", " + z + ": " + lTriangles.Count);
+                HexMesh currentHex = hexMeshes[x, z];
+                for (HexDirection dir = HexDirection.SE; dir <= HexDirection.NW; ++dir)
+                {
+                    if (GetNeighbor(dir, currentHex) != null)
+                    {
+                        AddBridge(dir, currentHex);
+                        AddTriangle(dir, currentHex);
+                    }
+                }
+                Debug.Log("Vertices after bridges and tris: " + lVertices.Count);
+                Debug.Log("Triangles after bridges and tris: " + lTriangles.Count);
             }
         }
-        Debug.Log("Grid Created. Vertices: " + lVertices.Count + " Triangles: " + lTriangles.Count);
     }
     public bool ExistsInList(int[] array, List<int> list)
     {
@@ -219,31 +255,20 @@ public class HexChunk : MonoBehaviour
         }
         return false;
     }
+    public void Translate(Vector3 delta)
+    {
+        translationVector = new Vector3();
+        translationVector = delta;
+        for (int i = 0; i < lVertices.Count; ++i)
+        {
+            lVertices[i] += delta;
+        }
+    }
     public void AddHexMesh(Mesh mesh, int width, int height)
     {
         CreateGrid(width, height);
-        CompleteGrid();
         ApplyToMesh(mesh);
         //mesh.RecalculateNormals();
-    }
-    public void CompleteGrid()
-    {
-        for (int x = 0; x < mWidth; ++x)
-        {
-            for (int z = 0; z < mHeight; ++z)
-            {
-                for (HexDirection dir = HexDirection.NE; dir < HexDirection.SW; ++dir)
-                {
-                    HexMesh currentHex = hexMeshes[(mHeight * x) + z];
-                    if (GetNeighbor(dir, currentHex) != null)
-                    {
-                        AddBridge(dir, currentHex);
-                        AddTriangle(dir, currentHex);
-                    }
-                }
-            }
-        }
-        Debug.Log("Grid Completed. Vertices: " + lVertices.Count + " Triangles: " + lTriangles.Count);
     }
     public void ApplyToMesh(Mesh mesh)
     {
@@ -252,93 +277,96 @@ public class HexChunk : MonoBehaviour
     }
     HexMesh GetNeighbor(HexDirection direction, HexMesh center)
     {
-        int x = center.xOff;
-        int z = center.zOff;
-        int checkIndex = 0;
-        bool rowIsEven = false;
-        if ((center.zOff & 1) != 1)
-        {
-            rowIsEven = true;
-        }
-        switch (direction)
+        int cX = center.xOff;
+        int cZ = center.zOff;
+        int dX = 0;
+        int dZ = 0;
+        bool evenRow = ((cZ & 1) != 1);
+        switch(direction)
         {
             case HexDirection.NE:
                 {
-                    checkIndex = (rowIsEven) ? ((x * mHeight) + z + 1) : (((x + 1) * mHeight) + z + 1);
+                    dX = (evenRow) ? 0 : 1;
+                    dZ = 1;
                     break;
                 }
             case HexDirection.E:
                 {
-                    checkIndex = ((x + 1) * mHeight) + z;
+                    dX = 1;
+                    dZ = 0;
                     break;
                 }
             case HexDirection.SE:
                 {
-                    checkIndex = (rowIsEven) ? ((x * mHeight) + z - 1) : (((x + 1) * mHeight) + z - 1);
+                    dX = (evenRow) ? 0 : 1;
+                    dZ = -1;
                     break;
                 }
             case HexDirection.SW:
                 {
-                    checkIndex = (rowIsEven) ? (((x - 1) * mHeight) + z - 1) : ((x * mHeight) + z - 1);
+                    dX = (evenRow) ? -1 : 0;
+                    dZ = -1;
                     break;
                 }
             case HexDirection.W:
                 {
-                    checkIndex = ((x - 1) * mHeight) + z;
+                    dX = -1;
+                    dZ = 0;
                     break;
                 }
             case HexDirection.NW:
                 {
-                    checkIndex = (rowIsEven) ? (((x - 1) * mHeight) + z + 1) : ((x * mHeight) + z + 1);
+                    dX = (evenRow) ? -1 : 0;
+                    dZ = 1;
                     break;
                 }
         }
-
-        if (checkIndex >= 0 && checkIndex < hexMeshes.Length)
+        int x = cX + dX;
+        if(x >= hexMeshes.GetLength(0) || x < 0)
         {
-            HexMesh neighbor = hexMeshes[checkIndex];
-            int dZ = Mathf.Abs(neighbor.zOff - center.zOff);
-            int dX = Mathf.Abs(neighbor.xOff - center.xOff);
-            if (dZ > 1 || dX > 1)
-            {
-                return null;
-            }
-            else
-            {
-                return neighbor;
-            }
-
+            return null;
         }
-        return null;
+        int z = cZ + dZ;
+        if(z >= hexMeshes.GetLength(1) || z < 0)
+        {
+            return null;
+        }
+        return hexMeshes[x, z];
     }
 
-    public void AddBridgeOutside(HexDirection dir, HexMesh from, HexMesh to)
+    public void AddBridgeOutside(HexDirection dir, HexMesh from, HexMesh to, Vector3 fromT, Vector3 toT)
     {
-        from.AddNeighbor(dir, to);
+        if(translationVector == null)
+        {
+            return;
+        }
+        int vStart = lVertices.Count;
         Vector3[] vertices = new Vector3[4];
-        vertices[0] = from.GetCorner(dir);
-        vertices[1] = from.GetCorner(dir.Next());
-        vertices[2] = to.ClosestCorner(vertices[0]);
-        vertices[3] = to.ClosestCorner(vertices[1]);
+    
+            vertices[0] = from.GetCorner(dir) + fromT;
+            vertices[1] = from.GetCorner(dir.Next()) + fromT;
+            vertices[2] = to.GetCorner(dir.Opposite()) + toT;
+            vertices[3] = to.GetCorner(dir.Next().Opposite()) + toT;
+        
         if(!ExistsInList(vertices, lVertices))
         {
             lVertices.AddRange(vertices);
         }
         int[] triangles = {
-                lVertices.IndexOf(vertices[0]),
-                lVertices.IndexOf(vertices[2]),
-                lVertices.IndexOf(vertices[1]),
-                lVertices.IndexOf(vertices[2]),
-                lVertices.IndexOf(vertices[0]),
-                lVertices.IndexOf(vertices[3])
+                vStart + 1,
+                vStart,
+                vStart + 2,
+                vStart + 2,
+                vStart,
+                vStart + 3
         };
+        
         if (!ExistsInList(triangles, lTriangles))
         {
+
             lTriangles.AddRange(triangles);
         }
-        Debug.Log("Outside bridge added. Vertices: " + lVertices.Count + " Triangles: " + lTriangles.Count);
     }
-
     public void AddBridge(HexDirection direction, HexMesh hex)
     {
         HexMesh neighbor = GetNeighbor(direction, hex);
@@ -364,66 +392,70 @@ public class HexChunk : MonoBehaviour
         {
             lTriangles.AddRange(triangles);
         }
+        else
+        {
+            Debug.Log("!!Trying to add duplicate triangles!!");
+        }
     }
 
     public void AddTriangle(HexDirection direction, HexMesh hex)
     {
-        if(direction != HexDirection.NE && direction != HexDirection.E)
-        {
-            return;
-        }
+        Vector3[] vertices = new Vector3[3];
+        int[] triangles = new int[3];
         switch(direction)
         {
-            case HexDirection.NE:
+            case HexDirection.SW:
                 {
-                    HexDirection dir = direction.Next();
-                    HexMesh n1 = GetNeighbor(HexDirection.NE, hex);
-                    HexMesh n2 = GetNeighbor(HexDirection.E, hex);
-                    if (n1 == null || n2 == null)
-                    {
-                        return;
-                    }
-                    Vector3[] vertices = new Vector3[3];
-                    vertices[0] = hex.GetCorner(dir);
-                    vertices[1] = n1.GetCorner(HexDirection.SW);
-                    vertices[2] = n2.GetCorner(HexDirection.NW);
-                    int[] triangles =
-                    {
-                        lVertices.IndexOf(vertices[0]),
-                        lVertices.IndexOf(vertices[1]),
-                        lVertices.IndexOf(vertices[2])
-                    };
-                    if (!ExistsInList(triangles, lTriangles))
-                    {
-                        lTriangles.AddRange(triangles);
-                    }
-                    break;
-                }
-            case HexDirection.E:
-                {
-                    HexDirection dir = direction.Next();
-                    HexMesh n1 = GetNeighbor(HexDirection.E, hex);
-                    HexMesh n2 = GetNeighbor(HexDirection.SE, hex);
+                    HexMesh n1 = GetNeighbor(HexDirection.SE, hex);
+                    HexMesh n2 = GetNeighbor(HexDirection.SW, hex);
                     if(n1 == null || n2 == null)
                     {
                         return;
                     }
-                    Vector3[] vertices = new Vector3[3];
-                    vertices[0] = hex.GetCorner(dir);
-                    vertices[1] = n1.GetCorner(HexDirection.W);
-                    vertices[2] = n2.GetCorner(HexDirection.NE);
-                    int[] triangles =
-                    {
-                        lVertices.IndexOf(vertices[0]),
-                        lVertices.IndexOf(vertices[1]),
-                        lVertices.IndexOf(vertices[2])
-                    };
-                    if (!ExistsInList(triangles, lTriangles))
-                    {
-                        lTriangles.AddRange(triangles);
-                    }
+                    vertices[0] = hex.GetCorner(HexDirection.SW);
+                    vertices[1] = n1.GetCorner(HexDirection.NW);
+                    vertices[2] = n2.GetCorner(HexDirection.E);
+                    triangles[0] = lVertices.IndexOf(vertices[0]);
+                    triangles[1] = lVertices.IndexOf(vertices[1]);
+                    triangles[2] = lVertices.IndexOf(vertices[2]);
                     break;
                 }
+            case HexDirection.W:
+                {
+                    HexMesh n1 = GetNeighbor(HexDirection.SW, hex);
+                    HexMesh n2 = GetNeighbor(HexDirection.W, hex);
+                    if (n1 == null || n2 == null)
+                    {
+                        return;
+                    }
+                    vertices[0] = hex.GetCorner(HexDirection.W);
+                    vertices[1] = n1.GetCorner(HexDirection.NE);
+                    vertices[2] = n2.GetCorner(HexDirection.SE);
+                    triangles[0] = lVertices.IndexOf(vertices[0]);
+                    triangles[1] = lVertices.IndexOf(vertices[1]);
+                    triangles[2] = lVertices.IndexOf(vertices[2]);
+                    break;
+                }
+            case HexDirection.NW:
+                {
+                    HexMesh n1 = GetNeighbor(HexDirection.W, hex);
+                    HexMesh n2 = GetNeighbor(HexDirection.NW, hex);
+                    if (n1 == null || n2 == null)
+                    {
+                        return;
+                    }
+                    vertices[0] = hex.GetCorner(HexDirection.NW);
+                    vertices[1] = n1.GetCorner(HexDirection.E);
+                    vertices[2] = n2.GetCorner(HexDirection.SW);
+                    triangles[0] = lVertices.IndexOf(vertices[0]);
+                    triangles[1] = lVertices.IndexOf(vertices[1]);
+                    triangles[2] = lVertices.IndexOf(vertices[2]);
+                    break;
+                }
+        }
+        if (!ExistsInList(triangles, lTriangles)) //double check to not add duplicate triangles
+        {
+            lTriangles.AddRange(triangles);
         }
     }
 
@@ -433,35 +465,89 @@ public class HexChunk : MonoBehaviour
         AddHexMesh(mesh, HexMetrics.chunkSize, HexMetrics.chunkSize);
         return mesh;
     }
+    public ChunkDataset GetChunkDataset(int xP, int zP)
+    {
+        ChunkDataset dataset = new ChunkDataset();
+        dataset.xPos = xP;
+        dataset.xPos = zP;
+        for(int x = 0; x < MapMetrics.chunkSize; ++x)
+        {
+            for(int z = 0; z < MapMetrics.chunkSize; ++z)
+            {
+                HexMesh currentMesh = hexMeshes[x + xP, z + zP];
+                dataset.verts.AddRange(currentMesh.GetVertices());
+                int minTri = int.MaxValue;
+                int[] newTris = currentMesh.GetTriangles();
+                for(int i = 0; i < newTris.Length; ++i)
+                {
+                    if (newTris[i] < minTri)
+                        minTri = newTris[i];
+                }
+                for (int i = 0; i < newTris.Length; ++i)
+                {
+                    newTris[i] -= minTri;
+                }
+                dataset.tris.AddRange(newTris);
 
+            }
+        }
+
+        return dataset;
+    }
     public void AddNeighborChunk(bool isAbove, HexChunk neighbor)
     {
+        if(this == neighbor)
+        { //this never gets tripped apparently
+            Debug.Log("Error: Chunk given self as neighbor");
+            return;
+        }
         if(isAbove)
         {
             for(int i = 0; i < HexMetrics.chunkSize; ++i)
             {
-                HexMesh from = hexMeshes[HexMetrics.chunkSize * i];
-                HexMesh to = neighbor.hexMeshes[(HexMetrics.chunkSize * i) + (HexMetrics.chunkSize - 1)];
-                AddBridgeOutside(HexDirection.SE, from, to);
-                /*
+                HexMesh from = hexMeshes[i, 0];
+                HexMesh to = neighbor.hexMeshes[i, 5];
+                Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
+                Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
+                AddBridgeOutside(HexDirection.SE, from, to, translationVector, neighbor.translationVector);
                 if(i > 0)
                 {
-                    HexMesh toSW = neighbor.hexMeshes[(HexMetrics.chunkSize * (i + 1)) + (HexMetrics.chunkSize - 1)];
-                    AddBridgeOutside(HexDirection.SW, from, toSW);
+                    HexMesh toSW = neighbor.hexMeshes[ i - 1, 5];
+                    AddBridgeOutside(HexDirection.SW, from, toSW, translationVector, neighbor.translationVector);
                 }
-                */
+            }
+        }
+        else
+        {
+            for (int i = 0; i < HexMetrics.chunkSize; ++i)
+            {
+                HexMesh from = hexMeshes[0, i];
+                HexMesh to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i];
+                Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
+                Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
+                AddBridgeOutside(HexDirection.W, from, to, translationVector, neighbor.translationVector);
+                if(i % 2 == 0)
+                {
+                    to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i + 1];
+                    AddBridgeOutside(HexDirection.NW, from, to, translationVector, neighbor.translationVector);
+                    if (i != 0)
+                    {
+                        to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i - 1];
+                        AddBridgeOutside(HexDirection.SW, from, to, translationVector, neighbor.translationVector);
+                    }
+                    
+                }
             }
         }
 
     }
-
     public void SetElevation(float[,] heightMap)
     {
         for (int x = 0; x < mWidth; ++x)
         {
             for(int z = 0; z < mHeight; ++z)
             {
-                hexMeshes[(mHeight * x) + z].SetElevation(heightMap[x, z]);
+                hexMeshes[x, z].SetElevation(heightMap[x, z]);
             }
         }
     }

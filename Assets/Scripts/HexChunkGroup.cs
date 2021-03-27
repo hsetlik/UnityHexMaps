@@ -10,6 +10,7 @@ public class HexChunkGroup : MonoBehaviour
     int xCreated;
     int zCreated;
     private int numChunks;
+    
     public GameObject chunk;
     private List<HexChunkDisplay> chunkDisplays;
     private List<HexChunk> chunks;
@@ -25,7 +26,7 @@ public class HexChunkGroup : MonoBehaviour
     private void CreateChunk(int x, int z)
     {
         bool hasNeighborBelow = (z > 0);
-        bool hasNeighborToRight = (x > 0);
+        bool hasNeighborToLeft = (x > 0);
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
         numChunks = allChunks.Length;
         //Debug.Log(numChunks + " existing chunks");
@@ -42,37 +43,39 @@ public class HexChunkGroup : MonoBehaviour
         newDisplay.OffsetX = x;
         newDisplay.OffsetZ = z;
         chunkMap[x, z] = newChunk;
+        Vector3 tVector = new Vector3(x * HexMetrics.chunkWidth, 0f, z * HexMetrics.chunkHeight);
+        //Debug.Log("Translation Vector: " + tVector.x + ", " + tVector.y + ", " + tVector.z);
+        tVector += newChunkObject.transform.position;
+        //newChunk.Translate(tVector);
+        //newChunkObject.transform.position = tVector;
         newChunk.CreateGrid(HexMetrics.chunkSize, HexMetrics.chunkSize);
-        newChunk.CompleteGrid();
-        if(hasNeighborBelow)
+        //newChunk.CompleteGrid();
+        
+        newChunk.Translate(tVector);
+        if (x > 0)
+        {
+            newChunk.AddNeighborChunk(false, chunkMap[x - 1, z]);
+        }
+        if(z > 0)
         {
             newChunk.AddNeighborChunk(true, chunkMap[x, z - 1]);
         }
-        if(hasNeighborToRight)
-        {
-            //Debug.Log("Adding righthand neighbor of: " + (x - 1) + ", " + z + ". ChunkMap size is: "+ chunkMap.GetLength(0) + ", " + chunkMap.GetLength(1));
-            newChunk.AddNeighborChunk(false, chunkMap[x - 1, z]);
-        }
-         //don't do this until after the edges are stitched
-
-        Vector3 tVector = new Vector3(x * HexMetrics.chunkWidth, 0f, z * HexMetrics.chunkHeight);
-        tVector += newChunkObject.transform.position;
-        newChunkObject.transform.position = tVector;
+        //don't do this until after the edges are stitched
         newDisplay.CreateMap();
     }
     public void Generate()
     {
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
-        for(int i = 0; i < allChunks.Length; ++i)
+        for (int i = 0; i < allChunks.Length; ++i)
         {
             DestroyImmediate(allChunks[i]);
         }
         chunkDisplays.Clear();
         chunks.Clear();
         chunkMap = new HexChunk[xChunks, zChunks];
-        for(int x = 0; x < xChunks; ++x)
+        for (int x = 0; x < xChunks; ++x)
         {
-            for(int z = 0; z < zChunks; ++z)
+            for (int z = 0; z < zChunks; ++z)
             {
                 //Debug.Log("Creating chunk: " + x + ", " + z);
                 CreateChunk(x, z);
@@ -80,10 +83,6 @@ public class HexChunkGroup : MonoBehaviour
             }
             xCreated++;
         }
-    }
-    public void StitchEdges()
-    {
-
     }
 
 }

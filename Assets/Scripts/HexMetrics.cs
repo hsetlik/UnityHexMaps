@@ -9,7 +9,7 @@ public static class HexMetrics
 	public const float solidFactor = 0.75f;
 	public const float blendFactor = 1f - solidFactor;
 	public const float elevationStep = 5.0f;
-	public const float chunkWidth = innerRadius * 2.0f * (float)chunkSize;
+	public const float chunkWidth = innerRadius * 2.0f * (float)chunkSize - (gap / (float)(chunkSize * 2));
 	public const float chunkHeight = (outerRadius * 1.5f * (float)chunkSize) - (gap / 3f);
 	public const int chunkSize = 6;
 	public static Vector3[] corners = {
