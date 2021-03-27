@@ -15,6 +15,7 @@ public class HexChunkDisplay : MonoBehaviour
         hexChunk = GetComponent<HexChunk>();
         Mesh mesh = new Mesh();
         hexChunk.ApplyToMesh(mesh);
+        mesh.RecalculateNormals();
         mFilter.sharedMesh = mesh;
     }
     private void Start()

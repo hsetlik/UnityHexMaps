@@ -176,7 +176,7 @@ public class HexChunk : MonoBehaviour
 
     public List<Vector3> lVertices;
     public List<int> lTriangles;
-    public void CreateGrid(int width, int height)
+    public void CreateGrid(int width, int height, float[,] noiseMap)
     {
         mWidth = width;
         mHeight = height;
@@ -190,6 +190,7 @@ public class HexChunk : MonoBehaviour
             for (int z = 0; z < height; ++z)
             {
                 hexMeshes[x, z] = new HexMesh(x, z, hexIndex * 7 + vOffset);
+                hexMeshes[x, z].SetElevation(noiseMap[x, z]);
                 lVertices.AddRange(hexMeshes[x, z].GetVertices());
                 lTriangles.AddRange(hexMeshes[x, z].GetTriangles());
                 ++hexIndex;
@@ -265,9 +266,7 @@ public class HexChunk : MonoBehaviour
         }
     }
     public void AddHexMesh(Mesh mesh, int width, int height)
-    {
-        CreateGrid(width, height);
-        ApplyToMesh(mesh);
+    { 
         //mesh.RecalculateNormals();
     }
     public void ApplyToMesh(Mesh mesh)
@@ -365,34 +364,6 @@ public class HexChunk : MonoBehaviour
         {
 
             lTriangles.AddRange(triangles);
-        }
-        int[] edgeTri = new int[3];
-        switch (dir)
-        {
-            case HexDirection.NE:
-                {
-                    break;
-                }
-            case HexDirection.E:
-                {
-                    break;
-                }
-            case HexDirection.SE:
-                {
-                    break;
-                }
-            case HexDirection.SW:
-                {
-                    break;
-                }
-            case HexDirection.W:
-                {
-                    break;
-                }
-            case HexDirection.NW:
-                {
-                    break;
-                }
         }
     }
     public void AddBridge(HexDirection direction, HexMesh hex)
@@ -518,62 +489,104 @@ public class HexChunk : MonoBehaviour
 
         return dataset;
     }
-    public void AddTriangleOutside(HexDirection dir, HexMesh from, HexMesh n1, HexMesh n2, Vector3 tFrom, Vector3 tTo)
+    public void AddTriangleOutside(HexDirection dir, HexMesh from, HexMesh n1, HexMesh n2, Vector3 tFrom, Vector3 tTo, bool evenRow)
     {
         int[] tris = new int[3];
         Vector3[] verts = new Vector3[3];
         int vStart = lVertices.Count;
-        switch(dir)
+        if(evenRow)
         {
-            case HexDirection.NE:
-                {
+            switch (dir)
+            {
+                case HexDirection.NE:
+                    {
 
-                    break;
-                }
-            case HexDirection.E:
-                {
-                    break;
-                }
-            case HexDirection.SE:
-                {
-                    verts[0] = from.GetCorner(HexDirection.SE) + tFrom;
-                    verts[1] = n1.GetCorner(HexDirection.W) + tFrom;
-                    verts[2] = n2.GetCorner(HexDirection.NE) + tTo;
-                    if (!ExistsInList(verts, lVertices))
-                    {
-                        lVertices.AddRange(verts);
+                        break;
                     }
-                    tris[0] = vStart;
-                    tris[1] = vStart + 1;
-                    tris[2] = vStart + 2;
-                    Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
-                    break;
-                }
-            case HexDirection.SW:
-                {
-                    verts[0] = from.GetCorner(HexDirection.SW) + tFrom;
-                    verts[1] = n1.GetCorner(HexDirection.NW) + tTo;
-                    verts[2] = n2.GetCorner(HexDirection.E) + tTo;
-                    if (!ExistsInList(verts, lVertices))
+                case HexDirection.E:
                     {
-                        lVertices.AddRange(verts);
+                        break;
                     }
-                    tris[0] = vStart;
-                    tris[1] = vStart + 1;
-                    tris[2] = vStart + 2;
-                    Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
-                    break;
-                }
-            case HexDirection.W:
-                {
-                    break;
-                }
-            case HexDirection.NW:
-                {
-                    break;
-                }
+                case HexDirection.SE:
+                    {
+                        verts[0] = from.GetCorner(HexDirection.SE) + tFrom;
+                        verts[1] = n1.GetCorner(HexDirection.W) + tFrom;
+                        verts[2] = n2.GetCorner(HexDirection.NE) + tTo;
+
+                        Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
+                        break;
+                    }
+                case HexDirection.SW:
+                    {
+                        verts[0] = from.GetCorner(HexDirection.SW) + tFrom;
+                        verts[1] = n1.GetCorner(HexDirection.NW) + tTo;
+                        verts[2] = n2.GetCorner(HexDirection.E) + tTo;
+
+                        Debug.Log("Southwest triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
+                        break;
+                    }
+                case HexDirection.W:
+                    {
+                        verts[0] = from.GetCorner(HexDirection.W) + tFrom;
+                        verts[1] = n1.GetCorner(HexDirection.NE) + tTo;
+                        verts[2] = n2.GetCorner(HexDirection.SE) + tTo;
+                        break;
+                    }
+                case HexDirection.NW:
+                    {
+                        verts[0] = from.GetCorner(HexDirection.NW) + tFrom;
+                        verts[1] = n1.GetCorner(HexDirection.E) + tTo;
+                        verts[2] = n2.GetCorner(HexDirection.SW) + tTo;
+                        break;
+                    }
+            }
         }
-        if(!ExistsInList(tris, lTriangles))
+        else
+        {
+            switch (dir)
+            {
+                case HexDirection.NE:
+                    {
+
+                        break;
+                    }
+                case HexDirection.E:
+                    {
+                        break;
+                    }
+                case HexDirection.SE:
+                    {
+                        break;
+                    }
+                case HexDirection.SW:
+                    {
+                        break;
+                    }
+                case HexDirection.W:
+                    {
+                        verts[0] = from.GetCorner(HexDirection.W) + tFrom;
+                        verts[1] = n1.GetCorner(HexDirection.NE) + tFrom;
+                        verts[2] = n2.GetCorner(HexDirection.SE) + tTo;
+                        break;
+                    }
+                case HexDirection.NW:
+                    {
+                        verts[0] = from.GetCorner(HexDirection.NW) + tFrom;
+                        verts[1] = n1.GetCorner(HexDirection.E) + tTo;
+                        verts[2] = n2.GetCorner(HexDirection.SW) + tFrom;
+                        break;
+                    }
+            }
+        }
+        
+        if (!ExistsInList(verts, lVertices))
+        {
+            lVertices.AddRange(verts);
+        }
+        tris[0] = vStart;
+        tris[1] = vStart + 1;
+        tris[2] = vStart + 2;
+        if (!ExistsInList(tris, lTriangles))
         {
             lTriangles.AddRange(tris);
         }
@@ -605,7 +618,7 @@ public class HexChunk : MonoBehaviour
                     n2 = neighbor.hexMeshes[i - 1, 5];
                     if(n1 != null && n2 != null)
                     {
-                        AddTriangleOutside(HexDirection.SW, from, n1, n2, translationVector, neighbor.translationVector);
+                        AddTriangleOutside(HexDirection.SW, from, n1, n2, translationVector, neighbor.translationVector, true);
                     }
                 }
                 if(i < HexMetrics.chunkSize - 1)
@@ -614,7 +627,7 @@ public class HexChunk : MonoBehaviour
                     n2 = to;
                     if(n1 != null && n2 != null)
                     {
-                        AddTriangleOutside(HexDirection.SE, from, n1, n2, translationVector, neighbor.translationVector);
+                        AddTriangleOutside(HexDirection.SE, from, n1, n2, translationVector, neighbor.translationVector, true);
                     }
 
                 }
@@ -626,6 +639,8 @@ public class HexChunk : MonoBehaviour
             {
                 HexMesh from = hexMeshes[0, i];
                 HexMesh to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i];
+                HexMesh n1;
+                HexMesh n2;
                 //Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
                 //Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
                 AddBridgeOutside(HexDirection.W, from, to, translationVector, neighbor.translationVector);
@@ -633,18 +648,39 @@ public class HexChunk : MonoBehaviour
                 {
                     to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i + 1];
                     AddBridgeOutside(HexDirection.NW, from, to, translationVector, neighbor.translationVector);
+                    n1 = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i];
+                    n2 = to;
+                    AddTriangleOutside(HexDirection.NW, from, n1, n2, translationVector, neighbor.translationVector, true);
                     if (i != 0)
                     {
                         to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i - 1];
                         AddBridgeOutside(HexDirection.SW, from, to, translationVector, neighbor.translationVector);
+                        n2 = n1;
+                        n1 = to;
+                        AddTriangleOutside(HexDirection.W, from, n1, n2, translationVector, neighbor.translationVector, true);
                     }
                     
                 }
+                else
+                {
+                    n2 = to;
+                    n1 = hexMeshes[0, i - 1];
+                    AddTriangleOutside(HexDirection.W, from, n1, n2, translationVector, neighbor.translationVector, false);
+                    if(i < HexMetrics.chunkSize - 1)
+                    {
+                        n1 = n2;
+                        n2 = hexMeshes[0, i + 1];
+                        AddTriangleOutside(HexDirection.NW, from, n1, n2, translationVector, neighbor.translationVector, false);
+                    }
+                }
             }
         }
+    }
+    public void FillCorner(HexChunk left, HexChunk below, HexChunk corner)
+    {
 
     }
-    public void SetElevation(float[,] heightMap)
+    public void SetElevation(float[,] heightMap) //remember to call this before connecting bridges and triangles
     {
         for (int x = 0; x < mWidth; ++x)
         {

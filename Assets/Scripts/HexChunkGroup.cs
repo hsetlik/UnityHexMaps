@@ -6,6 +6,9 @@ public class HexChunkGroup : MonoBehaviour
 {
     public int xChunks;
     public int zChunks;
+    public float noiseScale;
+    public float noiseHeight;
+    public int noiseSeed;
     public bool autoUpdate;
     int xCreated;
     int zCreated;
@@ -25,11 +28,8 @@ public class HexChunkGroup : MonoBehaviour
     }
     private void CreateChunk(int x, int z)
     {
-        bool hasNeighborBelow = (z > 0);
-        bool hasNeighborToLeft = (x > 0);
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
         numChunks = allChunks.Length;
-        //Debug.Log(numChunks + " existing chunks");
         if((x * zChunks) + z < numChunks) //don't make a chunk if it already exists
         {
             return;
@@ -44,13 +44,10 @@ public class HexChunkGroup : MonoBehaviour
         newDisplay.OffsetZ = z;
         chunkMap[x, z] = newChunk;
         Vector3 tVector = new Vector3(x * HexMetrics.chunkWidth, 0f, z * HexMetrics.chunkHeight);
-        //Debug.Log("Translation Vector: " + tVector.x + ", " + tVector.y + ", " + tVector.z);
         tVector += newChunkObject.transform.position;
-        //newChunk.Translate(tVector);
-        //newChunkObject.transform.position = tVector;
-        newChunk.CreateGrid(HexMetrics.chunkSize, HexMetrics.chunkSize);
-        //newChunk.CompleteGrid();
-        
+        newChunk.CreateGrid(HexMetrics.chunkSize,
+        HexMetrics.chunkSize,
+        NoiseGenerator.CreateNoiseMap(HexMetrics.chunkSize, x, HexMetrics.chunkSize, z, noiseSeed, noiseScale, noiseHeight));
         newChunk.Translate(tVector);
         if (x > 0)
         {
@@ -59,6 +56,13 @@ public class HexChunkGroup : MonoBehaviour
         if(z > 0)
         {
             newChunk.AddNeighborChunk(true, chunkMap[x, z - 1]);
+        }
+        if(x > 0 && z > 0) //stitch on the corner pieces if the chunk has an unfilled corner
+        {
+            HexChunk left = chunkMap[x - 1, z];
+            HexChunk below = chunkMap[x, z - 1];
+            HexChunk corner = chunkMap[x - 1, z - 1];
+            newChunk.FillCorner(left, below, corner);
         }
         //don't do this until after the edges are stitched
         newDisplay.CreateMap();
