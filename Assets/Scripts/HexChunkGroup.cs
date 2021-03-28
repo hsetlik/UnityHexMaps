@@ -56,10 +56,6 @@ public class HexChunkGroup : MonoBehaviour
         
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
         numChunks = allChunks.Length;
-        if((x * zChunks) + z < numChunks) //don't make a chunk if it already exists
-        {
-            return;
-        }
         GameObject newChunkObject = Instantiate(chunk);
         newChunkObject.tag = "HexChunk";
         HexChunkDisplay newDisplay = newChunkObject.GetComponent<HexChunkDisplay>();
@@ -76,7 +72,7 @@ public class HexChunkGroup : MonoBehaviour
         noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z, noiseCurve),
         noiseHeight);
         newChunk.Translate(tVector);
-        AddChunkToTiles(x, z, newChunk.GetTileData(x, z));
+        
         if (x > 0)
         {
             newChunk.AddNeighborChunk(false, chunkMap[x - 1, z]);
@@ -93,6 +89,7 @@ public class HexChunkGroup : MonoBehaviour
             newChunk.FillCorner(left, below, corner);
         }
         newChunk.SetColors(landGradient, noiseHeight, 0.0f);
+        AddChunkToTiles(x, z, newChunk.GetTileData(x, z));
         //don't do this until after the edges are stitched
         newDisplay.CreateMap();
     }

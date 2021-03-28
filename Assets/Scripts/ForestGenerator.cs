@@ -22,7 +22,6 @@ public class ForestGenerator : MonoBehaviour
         noiseMap = new float[map.xChunks * HexMetrics.chunkSize, map.zChunks * HexMetrics.chunkSize];
         noiseGen = GetComponent<NoiseGenerator>();
         mapTiles = map.GetTiles();
-
         if(minElevation < map.waterLevel) //no underwater trees
         {
             minElevation = map.waterLevel; 
@@ -37,7 +36,7 @@ public class ForestGenerator : MonoBehaviour
         float scale = map.noiseScale;
         float water = map.waterLevel;
         noiseGen.CreateNoiseMap(nWidth, nHeight, seed, map.noiseOctaves, scale, map.noiseOffset, map.noisePersistence, map.lacunarity, water);
-        noiseMap = noiseGen.GetFullMap();
+        noiseMap = noiseGen.GetFullMap(map.noiseCurve);
         //Debug.Log("Initialized forestation for: " + mapTiles.GetLength(0) + " by " + mapTiles.GetLength(1) + " tiles");
     }
     public void SetForestation(int x, int z)
@@ -67,21 +66,19 @@ public class ForestGenerator : MonoBehaviour
     }
     public void SpawnTrees(int x, int z)
     {
-        if(mapTiles[x, z].forestation == 0.0f)
+        HexTileData tile = mapTiles[x, z];
+        if(tile.forestation == 0.0f)
         {
             return;
         }
-        int numTrees = Mathf.FloorToInt(treeDensity * mapTiles[x, z].forestation);
-        if(numTrees == 0) //return if the tile shouldn't have any trees
-        {
-            return;
-        }
+        int numTrees = 1;
         for(int i = 0; i < numTrees; ++i) //create each tree;
         {
-            Vector3 position = mapTiles[x, z].RandomWithin();
+            Vector3 position = tile.RandomWithin(map.noiseSeed);
+            Vector3 tileCenter = tile.Center3D;
             GameObject newTree = Instantiate(maplePrefab);
             newTree.tag = "Tree";
-            newTree.transform.position = position;
+            newTree.transform.position = tileCenter;
         }
     }
     public void ClearTrees()

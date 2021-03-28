@@ -108,17 +108,17 @@ public class HexTileData
     }
     public Vector3 Corner(HexDirection dir) { return corners[(int)dir]; }
     public Vector3 Corner(int dir) { return corners[dir]; }
-    public Vector3 RandomWithin() //returns a random point on the surface of the hex somewhere within its corners
+    public Vector3 RandomWithin(int seed) //returns a random point on the surface of the hex somewhere within its corners
     {
-        System.Random prng = new System.Random(hexY);
+        System.Random prng = new System.Random(seed);
         float dxMax = Mathf.Abs(Corner(1).x - centerPos.x);
         float dZMax = Mathf.Abs(Corner(0).z - centerPos.z);
         double xRand = (prng.NextDouble() * 2.0f) - 1.0f;
         double zRand = (prng.NextDouble() * 2.0f) - 1.0f;
         float dX = (float)xRand * dxMax;
         float dZ = (float)zRand * dZMax;
-        Vector3 offset = new Vector3(dX, 0.0f, dZ);
-        return (centerPos + offset);
+        Vector3 offset = new Vector3(dX + centerPos.x, centerPos.y, dZ + centerPos.z);
+        return offset;
     }
     public int HexX { get { return hexX; } }
     public int HexY { get { return hexY; } }

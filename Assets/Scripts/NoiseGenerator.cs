@@ -72,8 +72,8 @@ public class NoiseGenerator : MonoBehaviour
         }
         return subMap;
     }
-    public float[,] GetFullMap()
+    public float[,] GetFullMap(AnimationCurve curve)
     {
-        return fullMap;
+        return GetSubMap(fullMap.GetLength(0), fullMap.GetLength(1), 0, 0, curve);
     }
  }
