@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Scripts/HexDirection.cs" />
+    <Compile Include="Assets/Scripts/PlayerViewport.cs" />
     <Compile Include="Assets/Scripts/RTSCameraNavigator.cs" />
     <Compile Include="Assets/Scripts/HexMeshEditor.cs" />
     <Compile Include="Assets/Scripts/HexChunkDisplay.cs" />
@@ -68,7 +69,8 @@
     <Compile Include="Assets/Scripts/HexChunk.cs" />
     <Compile Include="Assets/Scripts/NoiseGenerator.cs" />
     <Compile Include="Assets/Scripts/MapChunkRenderer.cs" />
-    <Compile Include="Assets/Scripts/PlayerViewport.cs" />
+    <Compile Include="Assets/Scripts/ForestGenerator.cs" />
+    <Compile Include="Assets/Scripts/HexTileData.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

@@ -136,13 +136,8 @@ public class HexMesh
     public List<int> triangles;
     List<Color> colors;
 }
-
 public class HexChunk : MonoBehaviour
 {
-    private void Awake()
-    {
-        collider = gameObject.AddComponent<MeshCollider>();
-    }
     public HexMesh[,] hexMeshes;
     public List<Vector3> lVertices;
     public List<int> lTriangles;
@@ -151,9 +146,6 @@ public class HexChunk : MonoBehaviour
     int mWidth;
     int mHeight;
     public Vector3 translationVector;
-    public int widthInChunks;
-    public int heightInChunks;
-    private MeshCollider collider;
     private int xOff;
     public int OffsetX
     {
@@ -325,21 +317,12 @@ public class HexChunk : MonoBehaviour
             lVertices[i] += delta;
         }
     }
-    public void AddHexMesh(Mesh mesh, int width, int height)
-    { 
-        //mesh.RecalculateNormals();
-    }
     public void ApplyToMesh(Mesh mesh)
     {
-        
         mesh.vertices = lVertices.ToArray();
         mesh.triangles = lTriangles.ToArray();
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();
-        if(collider != null)
-        {
-            collider.sharedMesh = mesh;
-        }
         mesh.colors = lColors.ToArray();
         
     }
@@ -555,13 +538,6 @@ public class HexChunk : MonoBehaviour
             lTriangles.AddRange(triangles);
         }
     }
-
-    public Mesh CreateMesh()
-    {
-        Mesh mesh = new Mesh();
-        AddHexMesh(mesh, HexMetrics.chunkSize, HexMetrics.chunkSize);
-        return mesh;
-    }
     public ChunkDataset GetChunkDataset(int xP, int zP)
     {
         ChunkDataset dataset = new ChunkDataset();
@@ -614,8 +590,6 @@ public class HexChunk : MonoBehaviour
                         verts[0] = from.GetCorner(HexDirection.SE) + tFrom;
                         verts[1] = n1.GetCorner(HexDirection.W) + tFrom;
                         verts[2] = n2.GetCorner(HexDirection.NE) + tTo;
-
-                        //Debug.Log("Southeast triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
                         break;
                     }
                 case HexDirection.SW:
@@ -623,8 +597,6 @@ public class HexChunk : MonoBehaviour
                         verts[0] = from.GetCorner(HexDirection.SW) + tFrom;
                         verts[1] = n1.GetCorner(HexDirection.NW) + tTo;
                         verts[2] = n2.GetCorner(HexDirection.E) + tTo;
-
-                        //Debug.Log("Southwest triangle with vertices: " + tris[0] + ", " + tris[1] + ", " + tris[2]);
                         break;
                     }
                 case HexDirection.W:
@@ -709,8 +681,6 @@ public class HexChunk : MonoBehaviour
                 HexMesh to = neighbor.hexMeshes[i, 5];
                 HexMesh n1;
                 HexMesh n2;
-                //Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
-                //Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
                 AddBridgeOutside(HexDirection.SE, from, to, translationVector, neighbor.translationVector);
                 if(i > 0)
                 {
@@ -743,8 +713,6 @@ public class HexChunk : MonoBehaviour
                 HexMesh to = neighbor.hexMeshes[neighbor.hexMeshes.GetLength(0) - 1, i];
                 HexMesh n1;
                 HexMesh n2;
-                //Debug.Log("From hex: " + from.xOff + ", " + from.zOff);
-                //Debug.Log("To hex: " + to.xOff + ", " + to.zOff);
                 AddBridgeOutside(HexDirection.W, from, to, translationVector, neighbor.translationVector);
                 if(i % 2 == 0)
                 {
@@ -817,5 +785,20 @@ public class HexChunk : MonoBehaviour
                 hexMeshes[x, z].SetElevation(heightMap[x, z]);
             }
         }
+    }
+    public HexTileData[,] GetTileData(int xOff, int zOff)
+    {
+        HexTileData[,] tiles = new HexTileData[mWidth, mHeight];
+        for(int x = 0; x < mWidth; ++x)
+        {
+            for(int z = 0; z < mHeight; ++z)
+            {
+                Vector3 center = hexMeshes[x, z].GetCenter() + translationVector;
+                int iX = xOff + x;
+                int iZ = zOff + z;
+                tiles[x, z] = new HexTileData(iX, iZ, center, hexMeshes[x, z]);
+            }
+        }
+        return tiles;
     }
 }

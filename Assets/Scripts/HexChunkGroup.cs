@@ -18,20 +18,37 @@ public class HexChunkGroup : MonoBehaviour
     public float noisePersistence = 0.4f;
     public float lacunarity = 1.3f;
     public bool autoUpdate;
-    
     private int numChunks;
-    
     public GameObject chunk;
     private List<HexChunkDisplay> chunkDisplays;
     private List<HexChunk> chunks;
     private HexChunk[,] chunkMap;
+    private HexTileData[,] allTiles;
     private NoiseGenerator noiseGen;
+    public HexTileData[,] GetTiles()
+    {
+        return allTiles;
+    }
     public HexChunkGroup()
     {
         chunkDisplays = new List<HexChunkDisplay>();
         chunks = new List<HexChunk>();
         //landGradient = new Gradient();
         numChunks = 0;
+    }
+    private void AddChunkToTiles(int xPos, int zPos, HexTileData[,] input)
+    {
+        int width = input.GetLength(0);
+        int height = input.GetLength(1);
+        for(int x = 0; x < width; ++x)
+        {
+            for(int z = 0; z < height; ++z)
+            {
+                int iX = (width * xPos) + x;
+                int iZ = (height * zPos) + z;
+                allTiles[iX, iZ] = input[x, z];
+            }
+        }
     }
     private void CreateChunk(int x, int z)
     {
@@ -58,6 +75,7 @@ public class HexChunkGroup : MonoBehaviour
         noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z, noiseCurve),
         noiseHeight);
         newChunk.Translate(tVector);
+        AddChunkToTiles(x, z, newChunk.GetTileData(x, z));
         if (x > 0)
         {
             newChunk.AddNeighborChunk(false, chunkMap[x - 1, z]);
@@ -110,11 +128,11 @@ public class HexChunkGroup : MonoBehaviour
         chunkDisplays.Clear();
         chunks.Clear();
         chunkMap = new HexChunk[xChunks, zChunks];
+        allTiles = new HexTileData[xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize];
         for (int x = 0; x < xChunks; ++x)
         {
             for (int z = 0; z < zChunks; ++z)
             {
-                //Debug.Log("Creating chunk: " + x + ", " + z);
                 CreateChunk(x, z);
             }
         }
