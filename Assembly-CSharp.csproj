@@ -72,6 +72,8 @@
     <Compile Include="Assets/Scripts/ForestGenerator.cs" />
     <Compile Include="Assets/Scripts/HexTileData.cs" />
     <Compile Include="Assets/Scripts/ForestGenEditor.cs" />
+    <Compile Include="Assets/Scripts/RiverGenerator.cs" />
+    <Compile Include="Assets/Scripts/RiverComponent.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
