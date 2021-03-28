@@ -1,6 +1,57 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+public class RiverCorners
+{
+    private bool[] corners;
+    public RiverCorners()
+    {
+        corners = new bool[6];
+        for(int i = 0; i < 6; ++i)
+        {
+            corners[i] = false;
+        }
+    }
+    public bool this[int index]
+    {
+        get { return corners[index]; }
+        set { corners[index] = value; }
+    }
+}
+
+
+public class RiverSides
+{
+    private bool[] sides;
+    private RiverCorners corners;
+    public RiverSides()
+    {
+        corners = new RiverCorners();
+        sides = new bool[6];
+        for (int i = 0; i < 6; ++i)
+        {
+            sides[i] = false;
+        }
+    }
+    public bool this[int index]
+    {
+        get { return sides[index]; }
+        set
+        {
+            sides[index] = value;
+            if (sides[Next(index)] == value)
+                corners[index] = value;
+        } //this needs to recalculate the corners as well;
+    }
+    private int Next(int index)
+    {
+        int value = index + 1;
+        if (value >= 6)
+            value -= 6;
+        return value;
+    }
+}
+
 
 public class HexTileData
 {
@@ -14,9 +65,11 @@ public class HexTileData
     public float wetness;
     public float forestation;
     private Vector3[] corners;
+    private RiverSides riverSides;
     public HexTileData()
     {
         corners = new Vector3[6];
+        riverSides = new RiverSides();
         globalOffX = 0;
         globalOffZ = 0;
         centerPos = new Vector3(0f, 0f, 0f);
@@ -27,6 +80,7 @@ public class HexTileData
     public HexTileData(int xOff, int zOff, Vector3 centerPoint, HexMesh parent)
     {
         corners = new Vector3[6];
+        riverSides = new RiverSides();
         globalOffX = xOff;
         globalOffZ = zOff;
         centerPos = centerPoint;

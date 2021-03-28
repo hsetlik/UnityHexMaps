@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+//TODO: create prefab for this w/ appropriate water shader
 [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter))]
 public class RiverComponent : MonoBehaviour
 {
