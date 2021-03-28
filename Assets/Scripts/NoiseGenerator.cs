@@ -72,4 +72,8 @@ public class NoiseGenerator : MonoBehaviour
         }
         return subMap;
     }
-}
+    public float[,] GetFullMap()
+    {
+        return fullMap;
+    }
+ }

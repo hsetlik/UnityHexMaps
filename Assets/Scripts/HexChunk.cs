@@ -51,17 +51,6 @@ public class HexMesh
             n.neighbors[(int)dir.Opposite()] = this;
         }
     }
-    public void Translate(Vector3 delta)
-    {
-        for(int i = 0; i < 7; ++i)
-        {
-            vertices[i] += delta;
-            if(i > 0)
-            {
-                corners[i] += delta;
-            }
-        }
-    }
     public Vector3 ClosestCorner(Vector3 point) //note: this funtcion works in terms of distance on the X-Z plane
     {
         Vector3 closest = new Vector3();

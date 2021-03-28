@@ -71,6 +71,7 @@
     <Compile Include="Assets/Scripts/MapChunkRenderer.cs" />
     <Compile Include="Assets/Scripts/ForestGenerator.cs" />
     <Compile Include="Assets/Scripts/HexTileData.cs" />
+    <Compile Include="Assets/Scripts/ForestGenEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

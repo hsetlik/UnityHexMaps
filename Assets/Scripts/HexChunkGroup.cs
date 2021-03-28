@@ -46,6 +46,7 @@ public class HexChunkGroup : MonoBehaviour
             {
                 int iX = (width * xPos) + x;
                 int iZ = (height * zPos) + z;
+                allTiles[iX, iZ] = new HexTileData();
                 allTiles[iX, iZ] = input[x, z];
             }
         }
