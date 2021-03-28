@@ -14,6 +14,7 @@ public class HexChunkGroup : MonoBehaviour
     public int noiseSeed;
     public int noiseOctaves;
     public Vector2 noiseOffset;
+    public AnimationCurve noiseCurve;
     public float noisePersistence = 0.4f;
     public float lacunarity = 1.3f;
     public bool autoUpdate;
@@ -54,7 +55,7 @@ public class HexChunkGroup : MonoBehaviour
         tVector += newChunkObject.transform.position;
         newChunk.CreateGrid(HexMetrics.chunkSize,
         HexMetrics.chunkSize,
-        noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z),
+        noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z, noiseCurve),
         noiseHeight);
         newChunk.Translate(tVector);
         if (x > 0)
@@ -72,9 +73,23 @@ public class HexChunkGroup : MonoBehaviour
             HexChunk corner = chunkMap[x - 1, z - 1];
             newChunk.FillCorner(left, below, corner);
         }
-        newChunk.SetColors(landGradient, newChunk.GetMaxHeight(), newChunk.GetMinHeight());
+        newChunk.SetColors(landGradient, noiseHeight, 0.0f);
         //don't do this until after the edges are stitched
         newDisplay.CreateMap();
+    }
+    public HexMesh GetMeshAt(Vector3 location)
+    {
+        for(int x = 0; x < chunkMap.GetLength(0); ++x)
+        {
+            for (int z = 0; z < chunkMap.GetLength(1); ++z)
+            {
+                if(chunkMap[x, z].translationVector.magnitude < location.magnitude)
+                {
+                    return chunkMap[x, z].GetClosestMesh(location);
+                }
+            }
+        }
+        return null;
     }
     public void Generate()
     {

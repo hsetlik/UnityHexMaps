@@ -79,6 +79,10 @@ public class HexMesh
         }
         return closest;
     }
+    public Vector3 GetCenter()
+    {
+        return vertices[0];
+    }
     public Vector3 GetCorner(HexDirection dir)
     {
         return corners[(int)dir];
@@ -135,6 +139,10 @@ public class HexMesh
 
 public class HexChunk : MonoBehaviour
 {
+    private void Awake()
+    {
+        collider = gameObject.AddComponent<MeshCollider>();
+    }
     public HexMesh[,] hexMeshes;
     public List<Vector3> lVertices;
     public List<int> lTriangles;
@@ -142,9 +150,10 @@ public class HexChunk : MonoBehaviour
     public List<Color> lColors;
     int mWidth;
     int mHeight;
-    private Vector3 translationVector;
+    public Vector3 translationVector;
     public int widthInChunks;
     public int heightInChunks;
+    private MeshCollider collider;
     private int xOff;
     public int OffsetX
     {
@@ -201,11 +210,29 @@ public class HexChunk : MonoBehaviour
         }
         return height;
     }
+    public HexMesh GetClosestMesh(Vector3 location)
+    {
+        float distance = float.MaxValue;
+        HexMesh mesh = hexMeshes[0, 0];
+        for(int x = 0; x < hexMeshes.GetLength(0); ++x)
+        {
+            for(int z = 0; z < hexMeshes.GetLength(1); ++z)
+            {
+                if(Vector3.Distance(location, hexMeshes[x, z].GetCenter() + translationVector) < distance)
+                {
+                    distance = Vector3.Distance(location, hexMeshes[x, z].GetCenter() + translationVector);
+                    mesh = hexMeshes[x, z];
+                }
+            }
+        }
+        return mesh;
+    }
 
     public void CreateGrid(int width, int height, float[,] noiseMap, float noiseScale)
     {
         mWidth = width;
         mHeight = height;
+        
         lVertices = new List<Vector3>();
         lTriangles = new List<int>();
         lUvs = new List<Vector2>();
@@ -309,7 +336,12 @@ public class HexChunk : MonoBehaviour
         mesh.triangles = lTriangles.ToArray();
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();
+        if(collider != null)
+        {
+            collider.sharedMesh = mesh;
+        }
         mesh.colors = lColors.ToArray();
+        
     }
     HexMesh GetNeighbor(HexDirection direction, HexMesh center)
     {

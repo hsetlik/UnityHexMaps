@@ -56,18 +56,19 @@
     <Analyzer Include="/Applications/Visual Studio.app/Contents/Resources/lib/monodevelop/AddIns/MonoDevelop.Unity/Analyzers/Microsoft.Unity.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets/Scripts/HexChunkGroup.cs" />
     <Compile Include="Assets/Scripts/HexDirection.cs" />
-    <Compile Include="Assets/Scripts/HexMetrics.cs" />
-    <Compile Include="Assets/Scripts/ChunkGroupEditor.cs" />
     <Compile Include="Assets/Scripts/RTSCameraNavigator.cs" />
-    <Compile Include="Assets/Scripts/HexChunk.cs" />
-    <Compile Include="Assets/Scripts/NoiseGenerator.cs" />
-    <Compile Include="Assets/Scripts/MapChunkRenderer.cs" />
     <Compile Include="Assets/Scripts/HexMeshEditor.cs" />
     <Compile Include="Assets/Scripts/HexChunkDisplay.cs" />
     <Compile Include="Assets/Scripts/HexChunkGenerator.cs" />
     <Compile Include="Assets/Scripts/MultiMeshMap.cs" />
+    <Compile Include="Assets/Scripts/HexChunkGroup.cs" />
+    <Compile Include="Assets/Scripts/HexMetrics.cs" />
+    <Compile Include="Assets/Scripts/ChunkGroupEditor.cs" />
+    <Compile Include="Assets/Scripts/HexChunk.cs" />
+    <Compile Include="Assets/Scripts/NoiseGenerator.cs" />
+    <Compile Include="Assets/Scripts/MapChunkRenderer.cs" />
+    <Compile Include="Assets/Scripts/PlayerViewport.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -637,59 +638,11 @@
     <Reference Include="mscorlib">
       <HintPath>/Applications/2020.3.0f1/Unity.app/Contents/NetStandard/compat/2.0.0/shims/netfx/mscorlib.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.VSCode.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.VisualStudio.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.VisualStudio.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Timeline.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Timeline">
-      <HintPath>Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEditor.UI">
-      <HintPath>Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Rider.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Postprocessing.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.Postprocessing.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Postprocessing.Runtime">
-      <HintPath>Library/ScriptAssemblies/Unity.Postprocessing.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.RenderPipelines.Core.Runtime">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Searcher.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.Searcher.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.RenderPipelines.Core.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.ShaderGraph.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.ShaderGraph.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Mathematics">
-      <HintPath>Library/ScriptAssemblies/Unity.Mathematics.dll</HintPath>
+    <Reference Include="Unity.VSCode.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Shaders">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Shaders.dll</HintPath>
@@ -697,14 +650,62 @@
     <Reference Include="Unity.RenderPipelines.Universal.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Mathematics.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.Mathematics.Editor.dll</HintPath>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Postprocessing.Runtime">
+      <HintPath>Library/ScriptAssemblies/Unity.Postprocessing.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.VisualStudio.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.VisualStudio.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.RenderPipeline.Universal.ShaderLibrary">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipeline.Universal.ShaderLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+    <Reference Include="Unity.Timeline.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Timeline">
+      <HintPath>Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Mathematics.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Mathematics.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Searcher.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Searcher.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Postprocessing.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Postprocessing.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEditor.UI">
+      <HintPath>Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Rider.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>Library/ScriptAssemblies/Unity.Mathematics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
