@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-[RequireComponent(typeof(NoiseGenerator))]
 public class ForestGenerator : MonoBehaviour
 {
     public HexChunkGroup map;
@@ -20,7 +19,7 @@ public class ForestGenerator : MonoBehaviour
     {
         mapTiles = new HexTileData[map.xChunks * HexMetrics.chunkSize, map.zChunks * HexMetrics.chunkSize];
         noiseMap = new float[map.xChunks * HexMetrics.chunkSize, map.zChunks * HexMetrics.chunkSize];
-        noiseGen = GetComponent<NoiseGenerator>();
+        noiseGen = new NoiseGenerator();
         mapTiles = map.GetTiles();
         if(minElevation < map.waterLevel) //no underwater trees
         {

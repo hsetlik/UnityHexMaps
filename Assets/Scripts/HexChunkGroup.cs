@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(NoiseGenerator))]
 public class HexChunkGroup : MonoBehaviour
 {
     public int xChunks;
@@ -109,7 +108,7 @@ public class HexChunkGroup : MonoBehaviour
     }
     public void Generate()
     {
-        noiseGen = GetComponent<NoiseGenerator>();
+        noiseGen = new NoiseGenerator();
         noiseGen.CreateNoiseMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize,
             noiseSeed,
             noiseOctaves,
