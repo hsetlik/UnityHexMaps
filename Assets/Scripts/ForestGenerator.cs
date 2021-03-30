@@ -3,82 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 public class ForestGenerator : MonoBehaviour
 {
-    public HexChunkGroup map;
-    public GameObject maplePrefab;
+    public GameObject maplePrefab1;
+    public List<GameObject> maplePrefabs;
     public GameObject pinePrefab;
-    public float maxElevation = 1.0f;
-    public float minElevation;
-    public int noiseOctaves = 3;
-    public int treeDensity = 4;
-    public float persistence = 0.5f;
-    public float lacunarity = 2.0f;
-    private HexTileData[,] mapTiles;
-    private NoiseGenerator noiseGen;
-    private float[,] noiseMap;
-    public void Init()
+    private void PlaceMaple(Vector3 position)
     {
-        mapTiles = new HexTileData[map.xChunks * HexMetrics.chunkSize, map.zChunks * HexMetrics.chunkSize];
-        noiseMap = new float[map.xChunks * HexMetrics.chunkSize, map.zChunks * HexMetrics.chunkSize];
-        noiseGen = new NoiseGenerator();
-        mapTiles = map.GetTiles();
-        if(minElevation < map.waterLevel) //no underwater trees
-        {
-            minElevation = map.waterLevel; 
-        }
-        //Debug.Log("Setting forestation for: " + mapTiles.GetLength(0) + " by " + mapTiles.GetLength(1) + " tiles");
+        GameObject newTree = Instantiate(maplePrefab1);
+        newTree.tag = "Tree";
+        newTree.transform.position = position;
     }
-    private void PrepareNoise()
+    private void PlaceRandomMaple(Vector3 position)
     {
-        int nWidth = map.xChunks * HexMetrics.chunkSize;
-        int nHeight = map.zChunks* HexMetrics.chunkSize;
-        int seed = map.noiseSeed;
-        float scale = map.noiseScale;
-        float water = map.waterLevel;
-        noiseGen.CreateNoiseMap(nWidth, nHeight, seed, map.noiseOctaves, scale, map.noiseOffset, map.noisePersistence, map.lacunarity, water);
-        noiseMap = noiseGen.GetFullMap(map.noiseCurve);
-        //Debug.Log("Initialized forestation for: " + mapTiles.GetLength(0) + " by " + mapTiles.GetLength(1) + " tiles");
-    }
-    public void SetForestation(int x, int z)
-    {
-        float centerElev = minElevation + ((maxElevation - minElevation) / 2.0f);
-        float elevation = mapTiles[x, z].Elevation;
-        elevation /= map.noiseHeight;
-        if(elevation < minElevation || elevation > maxElevation)
-        {
-            mapTiles[x, z].forestation = 0.0f;
-            return;
-        }
-        float forestation = centerElev * (2.0f * noiseMap[x, z]);
-        mapTiles[x, z].forestation = forestation;
-        //Debug.Log("Forestation at: " + x + ", " + z + " is: " + mapTiles[x, z].forestation);
-    }
-    private void SetForestation()
-    {
-        
-        for(int x = 0; x < mapTiles.GetLength(0); ++x)
-        {
-            for(int z = 0; z < mapTiles.GetLength(1); ++z)
-            {
-                SetForestation(x, z);
-            }
-        }
-    }
-    public void SpawnTrees(int x, int z)
-    {
-        HexTileData tile = mapTiles[x, z];
-        if(tile.forestation == 0.0f)
-        {
-            return;
-        }
-        int numTrees = 1;
-        for(int i = 0; i < numTrees; ++i) //create each tree;
-        {
-            Vector3 position = tile.RandomWithin(map.noiseSeed);
-            Vector3 tileCenter = tile.Center3D;
-            GameObject newTree = Instantiate(maplePrefab);
-            newTree.tag = "Tree";
-            newTree.transform.position = tileCenter;
-        }
+        int idx = Mathf.FloorToInt(UnityEngine.Random.value * maplePrefabs.Count);
+        var prefab = maplePrefabs[idx];
+        GameObject newTree = Instantiate(prefab);
+        newTree.tag = "Tree";
+        newTree.transform.position = position;
     }
     public void ClearTrees()
     {
@@ -88,19 +28,15 @@ public class ForestGenerator : MonoBehaviour
             DestroyImmediate(allTrees[i]);
         }
     }
-    public void GenerateForest()
+    public void GenerateMapleForest(List<Vector3> positions)
     {
         ClearTrees();
-        Init();
-        PrepareNoise();
-        SetForestation();
-        for(int x = 0; x < mapTiles.GetLength(0); ++x)
+        for(int i = 0; i < positions.Count; ++i)
         {
-            for(int z = 0; z < mapTiles.GetLength(1); ++z)
-            {
-                SpawnTrees(x, z);
-            }
+            if (maplePrefabs.Count < 2)
+                PlaceMaple(positions[i]);
+            else
+                PlaceRandomMaple(positions[i]);
         }
-
     }
 }

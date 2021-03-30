@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+[RequireComponent(typeof(ForestGenerator), typeof(RiverGenerator))]
 public class HexChunkGroup : MonoBehaviour
 {
     public int xChunks;
@@ -16,14 +16,21 @@ public class HexChunkGroup : MonoBehaviour
     public AnimationCurve noiseCurve;
     public float noisePersistence = 0.4f;
     public float lacunarity = 1.3f;
+    public float treeDensity = 4.0f;
+    public float treeLower = 0.47f;
+    public float treeUpper = 0.9f;
     public bool autoUpdate;
     private int numChunks;
     public GameObject chunk;
     private List<HexChunkDisplay> chunkDisplays;
     private List<HexChunk> chunks;
     private HexChunk[,] chunkMap;
+    private HexChunkDisplay[,] displayMap;
     private HexTileData[,] allTiles;
-    private NoiseGenerator noiseGen;
+    private NoiseGenerator landNoiseGen;
+    private NoiseGenerator forestNoiseGen;
+    public ForestGenerator forestGen;
+    public RiverGenerator riverGen;
     public HexTileData[,] GetTiles()
     {
         return allTiles;
@@ -64,11 +71,12 @@ public class HexChunkGroup : MonoBehaviour
         newDisplay.OffsetX = x;
         newDisplay.OffsetZ = z;
         chunkMap[x, z] = newChunk;
+        displayMap[x, z] = newDisplay;
         Vector3 tVector = new Vector3(x * HexMetrics.chunkWidth, 0f, z * HexMetrics.chunkHeight);
         tVector += newChunkObject.transform.position;
         newChunk.CreateGrid(HexMetrics.chunkSize,
         HexMetrics.chunkSize,
-        noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z, noiseCurve),
+        landNoiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z, noiseCurve),
         noiseHeight);
         newChunk.Translate(tVector);
         
@@ -108,8 +116,18 @@ public class HexChunkGroup : MonoBehaviour
     }
     public void Generate()
     {
-        noiseGen = new NoiseGenerator();
-        noiseGen.CreateNoiseMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize,
+        forestGen = GetComponent<ForestGenerator>();
+        landNoiseGen = new NoiseGenerator();
+        forestNoiseGen = new NoiseGenerator();
+        landNoiseGen.CreateNoiseMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize,
+            noiseSeed,
+            noiseOctaves,
+            noiseScale,
+            noiseOffset,
+            noisePersistence,
+            lacunarity,
+            waterLevel);
+        forestNoiseGen.CreateNoiseMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize,
             noiseSeed,
             noiseOctaves,
             noiseScale,
@@ -125,6 +143,7 @@ public class HexChunkGroup : MonoBehaviour
         chunkDisplays.Clear();
         chunks.Clear();
         chunkMap = new HexChunk[xChunks, zChunks];
+        displayMap = new HexChunkDisplay[xChunks, zChunks];
         allTiles = new HexTileData[xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize];
         for (int x = 0; x < xChunks; ++x)
         {
@@ -134,5 +153,73 @@ public class HexChunkGroup : MonoBehaviour
             }
         }
     }
-
+    public float[,] TreeLimitedMap(float[,] input)
+    {
+        
+        var width = input.GetLength(0);
+        var height = input.GetLength(1);
+        float[,] output = new float[width, height];
+        for(int x = 0; x < width; ++x)
+        {
+            for(int z = 0; z < height; ++z)
+            {
+                if (input[x, z] > 1.0f || input[x, z] < 0.0f)
+                {
+                    Debug.Log("Error! Input level is: " + input[x, z]);
+                }
+                if(input[x, z] < treeLower || input[x, z] > treeUpper || input[x, z] < waterLevel)
+                {
+                    output[x, z] = 0.0f;
+                }
+                else
+                {
+                    output[x, z] = input[x, z];
+                }
+            }
+        }
+        return output;
+    }
+    public Vector3 NearestVertex(Mesh mesh, Vector3 point)
+    {
+        int vCount = mesh.vertexCount;
+        Vector3 output = Vector3.zero;
+        float minDistance = float.MaxValue;
+        for(int i = 0; i < vCount; ++i)
+        {
+            float distance = Vector3.Distance(point, mesh.vertices[i]);
+            if(distance < minDistance)
+            {
+                minDistance = distance;
+                output = mesh.vertices[i];
+            }
+        }
+        return output;
+    }
+    public List<Vector3> TreeLocations()
+    {
+        var list = new List<Vector3>();
+        float[,] noiseMap = TreeLimitedMap(forestNoiseGen.GetFullMap(noiseCurve));
+        for (int x = 0; x < noiseMap.GetLength(0); ++x)
+        {
+            for(int z = 0; z < noiseMap.GetLength(1); ++z)
+            {
+                int numTrees = Mathf.FloorToInt(noiseMap[x, z] * treeDensity);
+                if(numTrees > 0)
+                {
+                    for(int i = 0; i < numTrees; ++i)
+                    {
+                        int displayX = Mathf.FloorToInt((float)x / HexMetrics.chunkSize);
+                        int displayZ = Mathf.FloorToInt((float)z / HexMetrics.chunkSize);
+                        var chunkFilter = displayMap[displayX, displayZ].Filter;
+                        var fPos = chunkFilter.transform.position;
+                        var cPoint = allTiles[x, z].RandomWithin();
+                        var adjPoint = cPoint + fPos;
+                        list.Add(adjPoint);
+                    }
+                }
+            }
+        }
+        //Debug.Log(dStr);
+        return list;
+    }
 }

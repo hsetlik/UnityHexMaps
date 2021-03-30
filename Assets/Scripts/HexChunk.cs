@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class HexMesh
 {
+    public int parentVertexIndex;
+    public int parentTriangleIndex;
     public HexMesh(int xOffset, int zOffset, int vertexOffset, float elevation = 0f)
     {
         zOff = zOffset;
@@ -43,6 +46,12 @@ public class HexMesh
             ++numVertices;
         }
     }
+    private Vector3 tCenter;
+    public Vector3 CenterT
+    {
+        get { return tCenter; }
+        set { tCenter = value; }
+    }
     public void AddNeighbor(HexDirection dir, HexMesh n)
     {
         if(n != null)
@@ -76,12 +85,14 @@ public class HexMesh
     {
         return corners[(int)dir];
     }
-    public Vector3[] GetVertices()
+    public Vector3[] GetVertices(int index)
     {
+        parentVertexIndex = index;
         return vertices.ToArray();
     }
-    public int[] GetTriangles()
+    public int[] GetTriangles(int index)
     {
+        parentTriangleIndex = index;
         return triangles.ToArray();
     }
     public Color[] GetColors()
@@ -132,6 +143,7 @@ public class HexChunk : MonoBehaviour
     public List<int> lTriangles;
     public List<Vector2> lUvs;
     public List<Color> lColors;
+    public List<Color> lSecondColors;
     int mWidth;
     int mHeight;
     public Vector3 translationVector;
@@ -218,6 +230,7 @@ public class HexChunk : MonoBehaviour
         lTriangles = new List<int>();
         lUvs = new List<Vector2>();
         lColors = new List<Color>();
+        lSecondColors = new List<Color>();
         hexMeshes = new HexMesh[width, height];
         int hexIndex = 0;
         int vOffset = 0;
@@ -227,8 +240,8 @@ public class HexChunk : MonoBehaviour
             {
                 hexMeshes[x, z] = new HexMesh(x, z, hexIndex * 7 + vOffset);
                 hexMeshes[x, z].SetElevation(noiseMap[x, z] * noiseScale);
-                lVertices.AddRange(hexMeshes[x, z].GetVertices());
-                lTriangles.AddRange(hexMeshes[x, z].GetTriangles());
+                lVertices.AddRange(hexMeshes[x, z].GetVertices(lVertices.Count));
+                lTriangles.AddRange(hexMeshes[x, z].GetTriangles(lTriangles.Count));
                 ++hexIndex;
                 HexMesh currentHex = hexMeshes[x, z];
                 for (HexDirection dir = HexDirection.SE; dir <= HexDirection.NW; ++dir)
@@ -249,8 +262,36 @@ public class HexChunk : MonoBehaviour
             float value = Mathf.InverseLerp(min, max, lVertices[i].y);
             Color color = gradient.Evaluate(value);
             lColors.Add(color);
+            lSecondColors.Add(color);
         }
     }
+    public void ColorHex(int x, int z, Color color)
+    {
+        var startIndex = hexMeshes[x, z].parentVertexIndex;
+        for(int i = 0; i < 7; ++i)
+        {
+            lSecondColors[startIndex + i] = color;
+        }
+    }
+    public void SetColors(Gradient gradient, float[,] noiseMap, float forestDensity, float minElev, float maxElev)
+    {
+        var width = noiseMap.GetLength(0);
+        var height = noiseMap.GetLength(1);
+        treeCounts = new int[width, height];
+        for(int x = 0; x < width; ++x)
+        {
+            for(int z = 0; z < height; ++z)
+            {
+                var value = noiseMap[x, z];
+                if (value > maxElev || value < minElev)
+                    value = 0.0f;
+                var color = gradient.Evaluate(value);
+                treeCounts[x, z] = Mathf.FloorToInt(forestDensity * value);
+                ColorHex(x, z, color);
+            }
+        }
+    }
+    public int[,] treeCounts;
     public bool ExistsInList(int[] array, List<int> list)
     {
         int aLength = array.Length;
@@ -305,15 +346,25 @@ public class HexChunk : MonoBehaviour
         {
             lVertices[i] += delta;
         }
+        for(int x = 0; x < hexMeshes.GetLength(0); ++x)
+        {
+            for(int z = 0; z < hexMeshes.GetLength(1); ++z)
+            {
+                hexMeshes[x, z].CenterT = hexMeshes[x, z].GetCenter() + delta;
+            }
+        }
     }
     public void ApplyToMesh(Mesh mesh)
     {
+        CalculateUVs();
         mesh.vertices = lVertices.ToArray();
         mesh.triangles = lTriangles.ToArray();
-        mesh.RecalculateNormals();
+        mesh.uv = lUvs.ToArray();
+        mesh.colors = lSecondColors.ToArray();
+        mesh.RecalculateBounds();
         mesh.RecalculateTangents();
-        mesh.colors = lColors.ToArray();
-        
+        mesh.RecalculateNormals();
+
     }
     HexMesh GetNeighbor(HexDirection direction, HexMesh center)
     {
@@ -436,6 +487,7 @@ public class HexChunk : MonoBehaviour
 
     public void CalculateUVs()
     {
+        lUvs.Clear();
         float zMax = float.MinValue;
         float zMin = float.MaxValue;
         float xMin = float.MaxValue;
@@ -526,35 +578,6 @@ public class HexChunk : MonoBehaviour
         {
             lTriangles.AddRange(triangles);
         }
-    }
-    public ChunkDataset GetChunkDataset(int xP, int zP)
-    {
-        ChunkDataset dataset = new ChunkDataset();
-        dataset.xPos = xP;
-        dataset.xPos = zP;
-        for (int x = 0; x < MapMetrics.chunkSize; ++x)
-        {
-            for (int z = 0; z < MapMetrics.chunkSize; ++z)
-            {
-                HexMesh currentMesh = hexMeshes[x + xP, z + zP];
-                dataset.verts.AddRange(currentMesh.GetVertices());
-                int minTri = int.MaxValue;
-                int[] newTris = currentMesh.GetTriangles();
-                for (int i = 0; i < newTris.Length; ++i)
-                {
-                    if (newTris[i] < minTri)
-                        minTri = newTris[i];
-                }
-                for (int i = 0; i < newTris.Length; ++i)
-                {
-                    newTris[i] -= minTri;
-                }
-                dataset.tris.AddRange(newTris);
-
-            }
-        }
-
-        return dataset;
     }
     public void AddTriangleOutside(HexDirection dir, HexMesh from, HexMesh n1, HexMesh n2, Vector3 tFrom, Vector3 tTo, bool evenRow)
     {
@@ -763,6 +786,8 @@ public class HexChunk : MonoBehaviour
         if (!ExistsInList(uTris, lTriangles))
         {
             lTriangles.AddRange(uTris);
+
+
         }
     }
     public void SetElevation(float[,] heightMap) //remember to call this before connecting bridges and triangles
@@ -782,7 +807,7 @@ public class HexChunk : MonoBehaviour
         {
             for(int z = 0; z < mHeight; ++z)
             {
-                Vector3 center = hexMeshes[x, z].GetCenter() + translationVector;
+                Vector3 center = hexMeshes[x, z].CenterT;
                 int iX = xOff + x;
                 int iZ = zOff + z;
                 tiles[x, z] = new HexTileData(iX, iZ, center, hexMeshes[x, z]);
@@ -790,4 +815,6 @@ public class HexChunk : MonoBehaviour
         }
         return tiles;
     }
+
+   
 }

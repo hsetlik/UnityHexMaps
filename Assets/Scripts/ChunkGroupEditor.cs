@@ -14,6 +14,15 @@ public class ChunkGroupEditor : Editor
         {
             group.Generate();
         }
+        ForestGenerator fGen = group.forestGen;
+        if(GUILayout.Button("Create Forests"))
+        {
+            fGen.GenerateMapleForest(group.TreeLocations());
+        }
+        if(GUILayout.Button("Clear Forests"))
+        {
+            fGen.ClearTrees();
+        }
     }
 }
     

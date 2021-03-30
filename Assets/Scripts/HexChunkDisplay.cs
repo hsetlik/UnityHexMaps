@@ -8,12 +8,21 @@ public class HexChunkDisplay : MonoBehaviour
     private MeshFilter mFilter;
     private MeshRenderer mRenderer;
     public bool AutoUpdate = true;
+    private Mesh mesh;
+    public Mesh Mesh
+    {
+        get { return mesh; }
+    }
+    public MeshFilter Filter
+    {
+        get { return mFilter; }
+    }
     public void CreateMap()
     {
         mFilter = GetComponent<MeshFilter>();
         mRenderer = GetComponent<MeshRenderer>();
         hexChunk = GetComponent<HexChunk>();
-        Mesh mesh = new Mesh();
+        mesh = new Mesh();
         hexChunk.ApplyToMesh(mesh);
         mesh.RecalculateNormals();
         mFilter.sharedMesh = mesh;
@@ -43,5 +52,18 @@ public class HexChunkDisplay : MonoBehaviour
         }
         set { hexChunk = value; }
     }
+
+    private void Update()
+    {
+        /*
+        if (mesh != null)
+        {
+            mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            mFilter.sharedMesh = mesh;
+        }
+        */
+    }
+
 
 }

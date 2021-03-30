@@ -10,13 +10,6 @@ public class ForestGenEditor : Editor
     {
         DrawDefaultInspector();
         ForestGenerator gen = (ForestGenerator)target;
-        if (GUILayout.Button("Generate"))
-        {
-            gen.GenerateForest();
-        }
-        if(GUILayout.Button("Clear"))
-        {
-            gen.ClearTrees();
-        }
+        
     }
 }
