@@ -7,6 +7,7 @@ public class HexChunkGroup : MonoBehaviour
     public int xChunks;
     public int zChunks;
     public Gradient landGradient;
+    public Gradient moistureGradient;
     public float waterLevel;
     public float noiseScale;
     public float noiseHeight;
@@ -24,16 +25,29 @@ public class HexChunkGroup : MonoBehaviour
     public GameObject chunk;
     private List<HexChunkDisplay> chunkDisplays;
     private List<HexChunk> chunks;
-    private HexChunk[,] chunkMap;
+    public HexChunk[,] chunkMap;
     private HexChunkDisplay[,] displayMap;
     private HexTileData[,] allTiles;
     private NoiseGenerator landNoiseGen;
     private NoiseGenerator forestNoiseGen;
     public ForestGenerator forestGen;
     public RiverGenerator riverGen;
+    private MoistureMapCreator moistureMap;
     public HexTileData[,] GetTiles()
     {
         return allTiles;
+    }
+    public HexChunk GetChunkAt(int globalX, int globalZ)
+    {
+        int chunkX = Mathf.FloorToInt((float)globalX / HexMetrics.chunkSize);
+        int chunkZ = Mathf.FloorToInt((float)globalZ / HexMetrics.chunkSize);
+        return chunkMap[chunkX, chunkZ];
+    }
+    public HexMesh GetMeshAt(int globalX, int globalZ)
+    {
+        int meshX = globalX % HexMetrics.chunkSize;
+        int meshZ = globalZ % HexMetrics.chunkSize;
+        return GetChunkAt(globalX, globalZ).hexMeshes[meshX, meshZ];
     }
     public HexChunkGroup()
     {
@@ -96,6 +110,8 @@ public class HexChunkGroup : MonoBehaviour
             newChunk.FillCorner(left, below, corner);
         }
         newChunk.SetColors(landGradient, noiseHeight, 0.0f);
+        float[,] moisture = moistureMap.noiseGen.GetSubMap(HexMetrics.chunkSize, HexMetrics.chunkSize, x, z, noiseCurve);
+        newChunk.SetColors(moistureGradient, moisture);
         AddChunkToTiles(x, z, newChunk.GetTileData(x, z));
         //don't do this until after the edges are stitched
         newDisplay.CreateMap();
@@ -117,6 +133,7 @@ public class HexChunkGroup : MonoBehaviour
     public void Generate()
     {
         forestGen = GetComponent<ForestGenerator>();
+        moistureMap = GetComponent<MoistureMapCreator>();
         landNoiseGen = new NoiseGenerator();
         forestNoiseGen = new NoiseGenerator();
         landNoiseGen.CreateNoiseMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize,
@@ -135,6 +152,7 @@ public class HexChunkGroup : MonoBehaviour
             noisePersistence,
             lacunarity,
             waterLevel);
+        moistureMap.CreateMoistureMap(xChunks * HexMetrics.chunkSize, zChunks * HexMetrics.chunkSize, waterLevel, noiseScale);
         GameObject[] allChunks = GameObject.FindGameObjectsWithTag("HexChunk");
         for (int i = 0; i < allChunks.Length; ++i)
         {
@@ -155,7 +173,6 @@ public class HexChunkGroup : MonoBehaviour
     }
     public float[,] TreeLimitedMap(float[,] input)
     {
-        
         var width = input.GetLength(0);
         var height = input.GetLength(1);
         float[,] output = new float[width, height];

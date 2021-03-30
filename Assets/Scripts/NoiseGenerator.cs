@@ -58,6 +58,60 @@ public class NoiseGenerator
             }
         }
     }
+    public void CreateNoiseMap(int width, int height, int octaves,
+        float noiseScale, Vector2 offset, float persistence, float lacunarity, float waterLevel)
+    {
+        fullMap = new float[width, height];
+        
+        Vector2[] octaveOffsets = new Vector2[octaves];
+        for (int i = 0; i < octaves; ++i)
+        {
+            float offsetX = UnityEngine.Random.Range(-100000, 100000) + offset.x;
+            float offsetY = UnityEngine.Random.Range(-100000, 100000) + offset.y;
+            octaveOffsets[i] = new Vector2(offsetX, offsetY);
+        }
+        float maxNoiseHeight = float.MinValue;
+        float minNoiseHeight = float.MaxValue;
+        float halfWidth = (width) / 2.0f;
+        float halfHeight = (height) / 2.0f;
+        for (int z = 0; z < height; ++z)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                float amplitude = 1.0f;
+                float frequency = 1.0f;
+                float noiseHeight = 0;
+                for (int i = 0; i < octaves; ++i)
+                {
+                    float halfX = x - halfWidth;
+                    float halfY = z - halfHeight;
+                    float sampleX = halfX / noiseScale * frequency + octaveOffsets[i].x;
+                    float sampleY = halfY / noiseScale * frequency + octaveOffsets[i].y;
+                    float pValue = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;
+                    noiseHeight += pValue * amplitude;
+                    amplitude *= persistence;
+                    frequency *= lacunarity;
+                }
+
+                if (noiseHeight > maxNoiseHeight)
+                    maxNoiseHeight = noiseHeight;
+                if (noiseHeight < minNoiseHeight)
+                    minNoiseHeight = noiseHeight;
+                fullMap[x, z] = noiseHeight;
+            }
+        }
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                fullMap[x, y] = Mathf.InverseLerp(minNoiseHeight, maxNoiseHeight, fullMap[x, y]);
+                if (fullMap[x, y] < waterLevel)
+                {
+                    fullMap[x, y] = waterLevel;
+                }
+            }
+        }
+    }
     private float[,] fullMap;
     public float[,] GetSubMap(int width, int height, int xOffset, int zOffset, AnimationCurve curve)
     {
@@ -76,4 +130,5 @@ public class NoiseGenerator
     {
         return GetSubMap(fullMap.GetLength(0), fullMap.GetLength(1), 0, 0, curve);
     }
+    public float[,] GetFullMap() { return fullMap; }
  }

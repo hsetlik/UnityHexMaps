@@ -7,8 +7,16 @@ public class HexMesh
 {
     public int parentVertexIndex;
     public int parentTriangleIndex;
+    public Dictionary<HexDirection, int> quadVertexIndeces;
+    public Dictionary<HexDirection, int> quadTriangleIndeces;
+    public Dictionary<HexDirection, int> triVertexIndeces;
+    public Dictionary<HexDirection, int> triTriangleIndeces;
     public HexMesh(int xOffset, int zOffset, int vertexOffset, float elevation = 0f)
     {
+        quadVertexIndeces = new Dictionary<HexDirection, int>();
+        quadTriangleIndeces = new Dictionary<HexDirection, int>();
+        triVertexIndeces = new Dictionary<HexDirection, int>();
+        triTriangleIndeces = new Dictionary<HexDirection, int>();
         zOff = zOffset;
         xOff = xOffset;
         corners = new List<Vector3>();
@@ -291,6 +299,20 @@ public class HexChunk : MonoBehaviour
             }
         }
     }
+    public void SetColors(Gradient gradient, float[,] noiseMap)
+    {
+        var width = noiseMap.GetLength(0);
+        var height = noiseMap.GetLength(1);
+        for (int x = 0; x < width; ++x)
+        {
+            for (int z = 0; z < height; ++z)
+            {
+                var value = noiseMap[x, z];
+                var color = gradient.Evaluate(value);
+                ColorHex(x, z, color);
+            }
+        }
+    }
     public int[,] treeCounts;
     public bool ExistsInList(int[] array, List<int> list)
     {
@@ -441,6 +463,7 @@ public class HexChunk : MonoBehaviour
 
         if (!ExistsInList(vertices, lVertices))
         {
+            from.quadVertexIndeces.Add(dir, lVertices.Count);
             lVertices.AddRange(vertices);
         }
         int[] triangles = {
@@ -454,7 +477,7 @@ public class HexChunk : MonoBehaviour
 
         if (!ExistsInList(triangles, lTriangles))
         {
-
+            from.quadTriangleIndeces.Add(dir, lTriangles.Count);
             lTriangles.AddRange(triangles);
         }
     }
@@ -481,6 +504,7 @@ public class HexChunk : MonoBehaviour
         };
         if (!ExistsInList(triangles, lTriangles)) //double check to not add duplicate triangles
         {
+            hex.quadTriangleIndeces.Add(direction, lTriangles.Count);
             lTriangles.AddRange(triangles);
         }
     }
@@ -576,6 +600,7 @@ public class HexChunk : MonoBehaviour
         }
         if (!ExistsInList(triangles, lTriangles)) //double check to not add duplicate triangles
         {
+            hex.triTriangleIndeces.Add(direction, lTriangles.Count);
             lTriangles.AddRange(triangles);
         }
     }
@@ -667,6 +692,7 @@ public class HexChunk : MonoBehaviour
         
         if (!ExistsInList(verts, lVertices))
         {
+            from.triVertexIndeces.Add(dir, lVertices.Count);
             lVertices.AddRange(verts);
         }
         tris[0] = vStart;
@@ -674,6 +700,7 @@ public class HexChunk : MonoBehaviour
         tris[2] = vStart + 2;
         if (!ExistsInList(tris, lTriangles))
         {
+            from.triTriangleIndeces.Add(dir, lTriangles.Count);
             lTriangles.AddRange(tris);
         }
     }
@@ -769,10 +796,12 @@ public class HexChunk : MonoBehaviour
         lVerts[0] = hexMeshes[0, 0].GetCorner(HexDirection.SW) + translationVector;
         lVerts[1] = below.hexMeshes[0, limit].GetCorner(HexDirection.NW) + below.translationVector;
         lVerts[2] = corner.hexMeshes[limit, limit].GetCorner(HexDirection.E) + corner.translationVector;
+        hexMeshes[0, 0].triVertexIndeces.Add(HexDirection.SW, lVertices.Count);
         lVertices.AddRange(lVerts);
         int[] lTris = { vStart, vStart + 1, vStart + 2 };
         if (!ExistsInList(lTris, lTriangles))
         {
+            hexMeshes[0, 0].triTriangleIndeces.Add(HexDirection.SW, lTriangles.Count);
             lTriangles.AddRange(lTris);
         }
         //add upper triangle
@@ -781,10 +810,12 @@ public class HexChunk : MonoBehaviour
         uVerts[0] = hexMeshes[0, 0].GetCorner(HexDirection.W) + translationVector;
         uVerts[1] = corner.hexMeshes[limit, limit].GetCorner(HexDirection.NE) + corner.translationVector;
         uVerts[2] = left.hexMeshes[limit, 0].GetCorner(HexDirection.SE) + left.translationVector;
+        hexMeshes[0, 0].triVertexIndeces.Add(HexDirection.W, lVertices.Count);
         lVertices.AddRange(uVerts);
         int[] uTris = { vStart, vStart + 1, vStart + 2 };
         if (!ExistsInList(uTris, lTriangles))
         {
+            hexMeshes[0, 0].triTriangleIndeces.Add(HexDirection.W, lTriangles.Count);
             lTriangles.AddRange(uTris);
 
 
